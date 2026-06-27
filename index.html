@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="sidebar" aria-label="Nexus AI navigation">
+      <div class="brand">
+        <div class="brand-mark">NX</div>
+        <div>
+          <h1>Nexus AI</h1>
+          <p>Career command center for college students</p>
+        </div>
+      </div>
+
+      <nav class="nav-list" aria-label="Workspace sections">
+        <button class="nav-item active" type="button" data-view="dashboard">Dashboard</button>
+        <button class="nav-item" type="button" data-view="applications">Applications</button>
+        <button class="nav-item" type="button" data-view="certifications">Certifications</button>
+        <button class="nav-item" type="button" data-view="projects">Projects</button>
+        <button class="nav-item" type="button" data-view="networking">Networking</button>
+        <button class="nav-item" type="button" data-view="interviews">Interviews</button>
+        <button class="nav-item" type="button" data-view="resume">Resume</button>
+        <button class="nav-item" type="button" data-view="goals">Goals</button>
+      </nav>
+    </aside>
+
+    <section class="workspace">
+      <header class="workspace-header">
+        <div>
+          <p class="eyebrow">Career intelligence workspace</p>
+          <h2 id="viewTitle">Nexus AI</h2>
+          <p class="header-copy">Connect applications, projects, certifications, networking, and goals into one career system.</p>
+        </div>
+        <div class="header-actions">
+          <button class="secondary-button" id="clearButton" type="button">New Workspace</button>
+          <button class="secondary-button" id="importButton" type="button">Import Snapshot</button>
+          <button class="primary-button" id="exportButton" type="button">Export Snapshot</button>
+          <input id="importFile" type="file" accept="application/json" hidden>
+        </div>
+      </header>
+
+      <section class="view active" id="dashboardView">
+        <section class="hero-card">
+          <div>
+            <p class="eyebrow">Career readiness</p>
+            <h3 id="readinessTitle">Building momentum</h3>
+            <p id="readinessSummary">Your operating system is ready.</p>
+          </div>
+          <div class="score-ring">
+            <span id="careerScore">0</span>
+            <small>/100</small>
+          </div>
+        </section>
+
+        <section class="profile-strip">
+          <form id="profileForm" class="profile-form">
+            <label>
+              Target role
+              <input name="targetRole" placeholder="Data Analyst Intern">
+            </label>
+            <label>
+              Major
+              <input name="major" placeholder="Information Systems">
+            </label>
+            <label>
+              Graduation
+              <input name="graduation" placeholder="May 2029">
+            </label>
+            <label>
+              Weekly focus hours
+              <input name="weeklyHours" type="number" min="0" max="80" placeholder="8">
+            </label>
+            <button class="primary-button" type="submit">Save Profile</button>
+          </form>
+        </section>
+
+        <section class="metrics-grid">
+          <article class="metric-card"><span>Active applications</span><strong id="activeApps">0</strong></article>
+          <article class="metric-card"><span>Certs in progress</span><strong id="activeCerts">0</strong></article>
+          <article class="metric-card"><span>Portfolio projects</span><strong id="projectCount">0</strong></article>
+          <article class="metric-card"><span>Network touches</span><strong id="networkCount">0</strong></article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>AI Coach</h3>
+              <span>Generated from your workspace</span>
+            </div>
+            <div class="coach-list" id="coachList"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>This Week</h3>
+              <span>Priority actions</span>
+            </div>
+            <ol class="task-list" id="weeklyPlan"></ol>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Upcoming Deadlines</h3>
+              <span>Next 30 days</span>
+            </div>
+            <div class="timeline-list" id="deadlineList"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Pipeline Analytics</h3>
+              <span>Live workspace health</span>
+            </div>
+            <div class="analytics-list" id="analyticsList"></div>
+          </article>
+        </section>
+      </section>
+
+      <section class="view" id="applicationsView">
+        <article class="panel">
+          <div class="panel-heading">
+            <h3>Internship Application Tracker</h3>
+            <span id="applicationStats">0 applications</span>
+          </div>
+          <div class="list-tools">
+            <input id="applicationSearch" placeholder="Search applications">
+            <select id="applicationFilter">
+              <option value="all">All statuses</option>
+              <option>Wishlist</option>
+              <option>Applied</option>
+              <option>Interview</option>
+              <option>Offer</option>
+              <option>Rejected</option>
+            </select>
+          </div>
+          <form class="entry-form" id="applicationForm">
+            <input name="company" placeholder="Company" required>
+            <input name="role" placeholder="Role" required>
+            <select name="status">
+              <option>Wishlist</option>
+              <option>Applied</option>
+              <option>Interview</option>
+              <option>Offer</option>
+              <option>Rejected</option>
+            </select>
+            <input name="deadline" type="date" required>
+            <input name="link" placeholder="Posting link">
+            <input name="notes" placeholder="Notes / next action">
+            <button class="primary-button" type="submit">Add</button>
+          </form>
+          <div class="table-list" id="applicationsList"></div>
+        </article>
+      </section>
+
+      <section class="view" id="certificationsView">
+        <article class="panel">
+          <div class="panel-heading">
+            <h3>Certification Tracker</h3>
+            <span>Study pipeline</span>
+          </div>
+          <form class="entry-form" id="certificationForm">
+            <input name="name" placeholder="Certification" required>
+            <input name="provider" placeholder="Provider" required>
+            <input name="progress" type="number" min="0" max="100" placeholder="Progress %" required>
+            <input name="target" type="date" required>
+            <input name="link" placeholder="Course / credential link">
+            <button class="primary-button" type="submit">Add</button>
+          </form>
+          <div class="card-list" id="certificationsList"></div>
+        </article>
+      </section>
+
+      <section class="view" id="projectsView">
+        <article class="panel">
+          <div class="panel-heading">
+            <h3>Project Portfolio</h3>
+            <span>Evidence for recruiters</span>
+          </div>
+          <form class="entry-form" id="projectForm">
+            <input name="name" placeholder="Project name" required>
+            <input name="stack" placeholder="Tech stack" required>
+            <select name="stage">
+              <option>Planning</option>
+              <option>Building</option>
+              <option>Published</option>
+              <option>Improving</option>
+            </select>
+            <input name="link" placeholder="GitHub or demo link">
+            <input name="impact" placeholder="Impact / result">
+            <button class="primary-button" type="submit">Add</button>
+          </form>
+          <div class="card-list" id="projectsList"></div>
+        </article>
+      </section>
+
+      <section class="view" id="networkingView">
+        <article class="panel">
+          <div class="panel-heading">
+            <h3>Networking CRM</h3>
+            <span>Follow-ups and relationships</span>
+          </div>
+          <form class="entry-form" id="networkForm">
+            <input name="name" placeholder="Person" required>
+            <input name="organization" placeholder="Company / community" required>
+            <select name="status">
+              <option>To contact</option>
+              <option>Messaged</option>
+              <option>Met</option>
+              <option>Follow up</option>
+            </select>
+            <input name="next" type="date" required>
+            <input name="notes" placeholder="Context / message idea">
+            <button class="primary-button" type="submit">Add</button>
+          </form>
+          <div class="table-list" id="networkingList"></div>
+        </article>
+      </section>
+
+      <section class="view" id="interviewsView">
+        <article class="panel">
+          <div class="panel-heading">
+            <h3>Interview Prep</h3>
+            <span>Role-specific practice</span>
+          </div>
+          <form class="entry-form" id="interviewForm">
+            <input name="role" placeholder="Target role" required>
+            <input name="company" placeholder="Company" required>
+            <select name="type">
+              <option>Behavioral</option>
+              <option>Technical</option>
+              <option>Case</option>
+              <option>Portfolio review</option>
+            </select>
+            <input name="date" type="date" required>
+            <input name="notes" placeholder="Practice focus">
+            <button class="primary-button" type="submit">Add</button>
+          </form>
+          <div class="card-list" id="interviewsList"></div>
+        </article>
+      </section>
+
+      <section class="view" id="resumeView">
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Resume Vault</h3>
+              <span>Working draft</span>
+            </div>
+            <textarea id="resumeDraft" spellcheck="false"></textarea>
+            <div class="button-row">
+              <button class="primary-button" id="saveResumeButton" type="button">Save Notes</button>
+              <button class="secondary-button" id="downloadResumeButton" type="button">Download TXT</button>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Resume Coach</h3>
+              <span>Instant checklist</span>
+            </div>
+            <div class="coach-list" id="resumeCoach"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="goalsView">
+        <article class="panel">
+          <div class="panel-heading">
+            <h3>Semester Career Goals</h3>
+            <span>Track progress weekly</span>
+          </div>
+          <form class="entry-form" id="goalForm">
+            <input name="goal" placeholder="Goal" required>
+            <input name="category" placeholder="Category" required>
+            <input name="progress" type="number" min="0" max="100" placeholder="Progress %" required>
+            <input name="due" type="date" required>
+            <input name="nextStep" placeholder="Next step">
+            <button class="primary-button" type="submit">Add</button>
+          </form>
+          <div class="card-list" id="goalsList"></div>
+        </article>
+      </section>
+    </section>
+  </main>
+
+  <dialog class="edit-dialog" id="editDialog">
+    <form method="dialog" class="edit-panel" id="editForm">
+      <div class="panel-heading">
+        <h3 id="editTitle">Edit Item</h3>
+        <button class="delete-button" value="cancel" type="submit">Close</button>
+      </div>
+      <div class="edit-fields" id="editFields"></div>
+      <div class="button-row">
+        <button class="primary-button" id="saveEditButton" value="default" type="submit">Save Changes</button>
+        <button class="secondary-button" value="cancel" type="submit">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js?v=3"></script>
+</body>
+</html>
