@@ -2,7 +2,15 @@
 
 ![Nexus AI thumbnail](thumbnail.png)
 
-Nexus AI is a career command center for ambitious college students. It combines application tracking, certification planning, project management, networking, interview preparation, resume notes, career goals, and AI-style coaching into one student dashboard.
+Nexus AI is a student career operating system for ambitious college students. It brings applications, certifications, projects, networking, interview preparation, resume notes, goals, and coaching into one organized dashboard.
+
+## Live Demo
+
+[Open Nexus AI](https://jasonbinong.github.io/Nexus-AI/)
+
+## What It Does
+
+Nexus AI helps students manage the full career-building process instead of tracking everything across scattered notes, spreadsheets, and tabs. It is built around repeatable workflows: apply, follow up, improve skills, prepare for interviews, update projects, and monitor progress over time.
 
 ## Features
 
@@ -29,6 +37,13 @@ Nexus AI is a career command center for ambitious college students. It combines 
 - CSS
 - JavaScript
 - Browser localStorage
+
+## What This Project Shows
+
+- Product thinking for student productivity and career management
+- Dashboard UX design for repeated daily use
+- Local data persistence and import/export workflows
+- Systems analysis across applications, skills, networking, and goals
 
 ## How To Run
 
