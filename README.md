@@ -52,6 +52,34 @@ Nexus AI helps students manage the full career-building process instead of track
 - Database schema planning for a future backend
 - Systems analysis across applications, skills, networking, and goals
 
+## Case Study
+
+### Problem
+
+College students often manage career preparation across disconnected tools: job boards, notes apps, spreadsheets, resumes, project folders, and calendar reminders. This makes it difficult to see whether they are actually becoming more internship-ready over time.
+
+### Solution
+
+Nexus AI centralizes the student career workflow into one dashboard. It helps users track applications, certifications, projects, networking, interviews, resume notes, goals, and skills while generating career-readiness signals from the workspace data.
+
+### Key Design Decisions
+
+- Started with a blank user workspace so each student builds their own profile
+- Used localStorage so the app works as a deployable static product on GitHub Pages
+- Added skill-gap analysis so the dashboard does more than store information
+- Included a SQL schema export to show how the product could evolve into a backend/database system
+
+### What I Learned
+
+This project strengthened my understanding of product design, state management, user workflows, and systems analysis. It also helped me think about how career preparation can be modeled as connected data instead of isolated tasks.
+
+### Future Improvements
+
+- Add user authentication
+- Move saved workspace data into PostgreSQL
+- Add a backend API for user accounts and analytics
+- Connect CareerLens AI recommendations directly into the Nexus AI skills plan
+
 ## How To Run
 
 Open `index.html` in a browser.
