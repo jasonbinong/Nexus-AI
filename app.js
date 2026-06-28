@@ -63,6 +63,36 @@ const starterState = {
       impact: "Turns a semester experience into an interactive student game."
     }
   ],
+  skills: [
+    {
+      id: createId(),
+      name: "SQL",
+      category: "Data",
+      level: 72,
+      evidence: "Google Data Analytics coursework and planned CareerLens dataset analysis"
+    },
+    {
+      id: createId(),
+      name: "JavaScript",
+      category: "Software",
+      level: 78,
+      evidence: "Nexus AI, CareerLens AI, LearnWise AI, and 15 Weeks at UMBC"
+    },
+    {
+      id: createId(),
+      name: "Power BI",
+      category: "Data",
+      level: 45,
+      evidence: "Certification path and planned internship skill dashboard"
+    },
+    {
+      id: createId(),
+      name: "AI Model Evaluation",
+      category: "AI",
+      level: 62,
+      evidence: "CareerLens AI role analysis and AI evaluation certifications"
+    }
+  ],
   networking: [
     {
       id: createId(),
@@ -128,6 +158,12 @@ const schemas = {
     ["link", "GitHub or demo link", "url"],
     ["impact", "Impact / result", "text"]
   ],
+  skills: [
+    ["name", "Skill", "text"],
+    ["category", "Category", "select", ["Data", "AI", "Software", "Cloud", "Business"]],
+    ["level", "Confidence %", "number"],
+    ["evidence", "Project, cert, or coursework proof", "text"]
+  ],
   networking: [
     ["name", "Person", "text"],
     ["organization", "Company / community", "text"],
@@ -171,16 +207,22 @@ const els = {
   activeCerts: document.querySelector("#activeCerts"),
   projectCount: document.querySelector("#projectCount"),
   networkCount: document.querySelector("#networkCount"),
+  skillCoverage: document.querySelector("#skillCoverage"),
   coachList: document.querySelector("#coachList"),
   weeklyPlan: document.querySelector("#weeklyPlan"),
   deadlineList: document.querySelector("#deadlineList"),
   analyticsList: document.querySelector("#analyticsList"),
+  dashboardSkillGaps: document.querySelector("#dashboardSkillGaps"),
+  schemaPreview: document.querySelector("#schemaPreview"),
   applicationsList: document.querySelector("#applicationsList"),
   applicationStats: document.querySelector("#applicationStats"),
   applicationSearch: document.querySelector("#applicationSearch"),
   applicationFilter: document.querySelector("#applicationFilter"),
   certificationsList: document.querySelector("#certificationsList"),
   projectsList: document.querySelector("#projectsList"),
+  skillsList: document.querySelector("#skillsList"),
+  skillsGapList: document.querySelector("#skillsGapList"),
+  roleFitLabel: document.querySelector("#roleFitLabel"),
   networkingList: document.querySelector("#networkingList"),
   interviewsList: document.querySelector("#interviewsList"),
   goalsList: document.querySelector("#goalsList"),
@@ -190,17 +232,22 @@ const els = {
   editForm: document.querySelector("#editForm"),
   editTitle: document.querySelector("#editTitle"),
   editFields: document.querySelector("#editFields"),
-  downloadResumeButton: document.querySelector("#downloadResumeButton")
+  downloadResumeButton: document.querySelector("#downloadResumeButton"),
+  downloadSqlButton: document.querySelector("#downloadSqlButton"),
+  downloadPlanButton: document.querySelector("#downloadPlanButton")
 };
 
 document.querySelector("#applicationForm").addEventListener("submit", event => addFromForm(event, "applications"));
 document.querySelector("#certificationForm").addEventListener("submit", event => addFromForm(event, "certifications"));
 document.querySelector("#projectForm").addEventListener("submit", event => addFromForm(event, "projects"));
+document.querySelector("#skillForm").addEventListener("submit", event => addFromForm(event, "skills"));
 document.querySelector("#networkForm").addEventListener("submit", event => addFromForm(event, "networking"));
 document.querySelector("#interviewForm").addEventListener("submit", event => addFromForm(event, "interviews"));
 document.querySelector("#goalForm").addEventListener("submit", event => addFromForm(event, "goals"));
 document.querySelector("#saveResumeButton").addEventListener("click", saveResume);
 els.downloadResumeButton.addEventListener("click", downloadResume);
+els.downloadSqlButton.addEventListener("click", downloadSqlSchema);
+els.downloadPlanButton.addEventListener("click", downloadCareerPlan);
 els.exportButton.addEventListener("click", exportSnapshot);
 els.importButton.addEventListener("click", () => els.importFile.click());
 els.importFile.addEventListener("change", importSnapshot);
@@ -210,6 +257,18 @@ els.applicationSearch.addEventListener("input", renderApplications);
 els.applicationFilter.addEventListener("change", renderApplications);
 els.editForm.addEventListener("submit", saveEdit);
 els.navItems.forEach(item => item.addEventListener("click", () => switchView(item.dataset.view)));
+
+const roleRequirements = {
+  "data analyst": ["SQL", "Excel", "Power BI", "Data Analysis", "Statistics", "Communication"],
+  "business intelligence": ["SQL", "Power BI", "Data Visualization", "Business Analysis", "Excel", "Communication"],
+  "ai data": ["AI Model Evaluation", "Prompt Engineering", "Data Quality", "Generative AI", "Communication"],
+  "machine learning": ["Python", "Statistics", "Machine Learning", "SQL", "Data Visualization"],
+  "business analyst": ["Business Analysis", "Systems Analysis", "SQL", "Agile", "Communication"],
+  "systems analyst": ["Systems Analysis", "Database Management", "Business Analysis", "Agile", "Documentation"],
+  "software": ["JavaScript", "Object-Oriented Programming", "GitHub", "Testing", "APIs"],
+  "cloud": ["Cloud Computing", "Troubleshooting", "Networking", "Documentation", "Security"],
+  "default": ["SQL", "JavaScript", "Data Analysis", "Generative AI", "GitHub", "Communication"]
+};
 
 render();
 
@@ -375,6 +434,7 @@ function render() {
   renderApplications();
   renderCertifications();
   renderProjects();
+  renderSkills();
   renderNetworking();
   renderInterviews();
   renderGoals();
@@ -398,6 +458,7 @@ function renderDashboard() {
   els.activeCerts.textContent = state.certifications.filter(cert => Number(cert.progress) < 100).length;
   els.projectCount.textContent = state.projects.length;
   els.networkCount.textContent = state.networking.length;
+  els.skillCoverage.textContent = `${calculateSkillFit().coverage}%`;
 
   els.coachList.innerHTML = generateCoachCards().map(card => `
     <div class="coach-card">
@@ -420,6 +481,10 @@ function renderDashboard() {
       <strong>${escapeHtml(item.value)}</strong>
     </div>
   `).join("");
+
+  const fit = calculateSkillFit();
+  els.dashboardSkillGaps.innerHTML = renderSkillGapCards(fit.gaps.slice(0, 5), fit.matched);
+  els.schemaPreview.innerHTML = renderSchemaPreview();
 }
 
 function renderApplications() {
@@ -462,6 +527,21 @@ function renderProjects() {
       ${rowActions("projects", item.id)}
     </div>
   `).join("") || emptyState("Add projects with public links and measurable outcomes.");
+}
+
+function renderSkills() {
+  const fit = calculateSkillFit();
+  els.roleFitLabel.textContent = `${fit.coverage}% aligned`;
+  els.skillsList.innerHTML = state.skills.map(item => `
+    <div class="data-card">
+      <h4>${escapeHtml(item.name)}</h4>
+      <p><span class="pill">${escapeHtml(item.category)}</span> ${Number(item.level || 0)}% confidence</p>
+      <div class="progress-track"><div class="progress-fill" style="width: ${clamp(Number(item.level || 0), 0, 100)}%"></div></div>
+      <p>${escapeHtml(item.evidence || "Add project, certification, coursework, or work proof for this skill.")}</p>
+      ${rowActions("skills", item.id)}
+    </div>
+  `).join("") || emptyState("Add skills that are backed by visible proof.");
+  els.skillsGapList.innerHTML = renderSkillGapCards(fit.gaps, fit.matched);
 }
 
 function renderNetworking() {
@@ -535,7 +615,79 @@ function calculateCareerScore() {
   const certs = Math.min(state.certifications.reduce((sum, cert) => sum + Number(cert.progress || 0), 0) / 10, 16);
   const network = Math.min(state.networking.length * 4, 12);
   const goals = Math.min(state.goals.reduce((sum, goal) => sum + Number(goal.progress || 0), 0) / 18, 8);
-  return Math.round(profile + apps + interviews + projects + certs + network + goals);
+  const skills = Math.min(calculateSkillFit().coverage / 10, 10);
+  return Math.round(profile + apps + interviews + projects + certs + network + goals + skills);
+}
+
+function calculateSkillFit() {
+  const role = String(state.profile.targetRole || "").toLowerCase();
+  const key = Object.keys(roleRequirements).find(item => item !== "default" && role.includes(item)) || "default";
+  const required = roleRequirements[key];
+  const skillMap = new Map(state.skills.map(skill => [normalizeSkill(skill.name), skill]));
+  const matched = required
+    .map(name => ({ name, skill: skillMap.get(normalizeSkill(name)) }))
+    .filter(item => item.skill);
+  const gaps = required
+    .filter(name => !skillMap.has(normalizeSkill(name)))
+    .map(name => ({ name, action: getSkillGapAction(name) }));
+  const levelScore = matched.reduce((sum, item) => sum + Number(item.skill.level || 0), 0);
+  const coverage = required.length ? Math.round(levelScore / (required.length * 100) * 100) : 0;
+  return { required, matched, gaps, coverage };
+}
+
+function normalizeSkill(value) {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function getSkillGapAction(skill) {
+  const actions = {
+    "SQL": "Add a project with joins, grouped metrics, and a short insight summary.",
+    "Power BI": "Build one dashboard and include screenshots plus the business question it answers.",
+    "Data Analysis": "Show a dataset, the cleaning steps, and the decision your analysis supports.",
+    "Communication": "Write a short case study for one project using problem, action, and result.",
+    "AI Model Evaluation": "Create a rubric and score sample AI responses for accuracy, usefulness, and safety.",
+    "Prompt Engineering": "Document prompt versions and explain why one output improved.",
+    "Business Analysis": "Add user stories, requirements, and acceptance criteria for Nexus AI.",
+    "Systems Analysis": "Document the entities, workflows, and data model behind this app.",
+    "Testing": "Add a QA checklist or bug report table for one project.",
+    "Cloud Computing": "Document deployment choices and compare GitHub Pages, Vercel, Render, and OCI."
+  };
+  return actions[skill] || "Add public proof through a project, certification, coursework artifact, or case study.";
+}
+
+function renderSkillGapCards(gaps, matched) {
+  const cards = [
+    ...gaps.map(item => `
+      <div class="skill-gap-card missing">
+        <h4>${escapeHtml(item.name)}</h4>
+        <p>${escapeHtml(item.action)}</p>
+      </div>
+    `),
+    ...matched.map(item => `
+      <div class="skill-gap-card matched">
+        <h4>${escapeHtml(item.name)}</h4>
+        <p>${escapeHtml(item.skill.evidence || "Evidence saved in skill inventory.")}</p>
+      </div>
+    `)
+  ];
+  return cards.join("") || emptyState("Your tracked skills cover the current role requirements.");
+}
+
+function renderSchemaPreview() {
+  const tables = [
+    ["students", "profile_id, target_role, major, graduation, weekly_hours"],
+    ["applications", "company, role, status, deadline, link, notes"],
+    ["skills", "name, category, confidence_level, evidence"],
+    ["projects", "name, tech_stack, stage, link, impact"],
+    ["networking", "contact_name, organization, status, next_follow_up"],
+    ["goals", "goal, category, progress, due_date, next_step"]
+  ];
+  return tables.map(([name, fields]) => `
+    <div class="schema-row">
+      <strong>${escapeHtml(name)}</strong>
+      <span>${escapeHtml(fields)}</span>
+    </div>
+  `).join("");
 }
 
 function getReadinessTitle(score) {
@@ -640,6 +792,7 @@ function generateAnalytics() {
     { label: "Application stages", value: appsByStatus },
     { label: "Average certification progress", value: avgCert },
     { label: "Published projects", value: `${published}/${state.projects.length}` },
+    { label: "Skill coverage", value: `${calculateSkillFit().coverage}% target-role fit` },
     { label: "Next critical date", value: nextDeadline ? `${nextDeadline.title} on ${formatDate(nextDeadline.date)}` : "Nothing scheduled" },
     { label: "Recent activity", value: state.activity[0]?.message || "No recent activity yet" }
   ];
@@ -682,6 +835,80 @@ function exportSnapshot() {
   downloadFile("nexus-ai-snapshot.json", JSON.stringify(snapshot, null, 2), "application/json");
 }
 
+function downloadSqlSchema() {
+  const sql = `-- Nexus AI portfolio schema
+CREATE TABLE profiles (
+  id INTEGER PRIMARY KEY,
+  target_role TEXT NOT NULL,
+  major TEXT,
+  graduation TEXT,
+  weekly_hours INTEGER
+);
+
+CREATE TABLE applications (
+  id TEXT PRIMARY KEY,
+  company TEXT NOT NULL,
+  role TEXT NOT NULL,
+  status TEXT NOT NULL,
+  deadline DATE,
+  link TEXT,
+  notes TEXT
+);
+
+CREATE TABLE skills (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  category TEXT,
+  confidence_level INTEGER,
+  evidence TEXT
+);
+
+CREATE TABLE projects (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  tech_stack TEXT,
+  stage TEXT,
+  link TEXT,
+  impact TEXT
+);
+
+CREATE TABLE networking (
+  id TEXT PRIMARY KEY,
+  contact_name TEXT NOT NULL,
+  organization TEXT,
+  status TEXT,
+  next_follow_up DATE,
+  notes TEXT
+);
+
+CREATE TABLE goals (
+  id TEXT PRIMARY KEY,
+  goal TEXT NOT NULL,
+  category TEXT,
+  progress INTEGER,
+  due_date DATE,
+  next_step TEXT
+);`;
+  downloadFile("nexus-ai-schema.sql", sql, "text/sql");
+}
+
+function downloadCareerPlan() {
+  const fit = calculateSkillFit();
+  const lines = [
+    "Nexus AI Career Plan",
+    `Target role: ${state.profile.targetRole || "Not set"}`,
+    `Career readiness score: ${calculateCareerScore()}/100`,
+    `Skill coverage: ${fit.coverage}%`,
+    "",
+    "Priority skill gaps:",
+    ...(fit.gaps.length ? fit.gaps.map(item => `- ${item.name}: ${item.action}`) : ["- No major gaps detected."]),
+    "",
+    "This week's plan:",
+    ...generateWeeklyPlan().map(item => `- ${item}`)
+  ];
+  downloadFile("nexus-ai-career-plan.txt", lines.join("\n"), "text/plain");
+}
+
 function importSnapshot(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -709,6 +936,7 @@ function switchView(view) {
     projects: "Projects",
     networking: "Networking",
     interviews: "Interview Prep",
+    skills: "Skills Lab",
     resume: "Resume Builder",
     goals: "Career Goals"
   };
@@ -727,6 +955,7 @@ function displayName(collection, item) {
   if (collection === "applications") return `${item.company} ${item.role}`;
   if (collection === "certifications") return item.name;
   if (collection === "projects") return item.name;
+  if (collection === "skills") return item.name;
   if (collection === "networking") return item.name;
   if (collection === "interviews") return `${item.company} ${item.role}`;
   if (collection === "goals") return item.goal;
@@ -738,6 +967,7 @@ function singular(collection) {
     applications: "application",
     certifications: "certification",
     projects: "project",
+    skills: "skill",
     networking: "contact",
     interviews: "interview",
     goals: "goal"

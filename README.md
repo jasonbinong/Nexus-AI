@@ -26,6 +26,11 @@ Nexus AI helps students manage the full career-building process instead of track
 - Upcoming deadline timeline
 - Pipeline analytics
 - Career profile setup
+- Skill inventory with proof-backed confidence scoring
+- Target-role skill gap analysis
+- Database-ready workspace schema preview
+- Downloadable SQL schema for backend/database planning
+- Downloadable career action plan
 - Local browser persistence with localStorage
 - Importable and exportable JSON snapshots
 - Downloadable resume notes
@@ -43,6 +48,8 @@ Nexus AI helps students manage the full career-building process instead of track
 - Product thinking for student productivity and career management
 - Dashboard UX design for repeated daily use
 - Local data persistence and import/export workflows
+- Skill gap analysis tied to target roles
+- Database schema planning for a future backend
 - Systems analysis across applications, skills, networking, and goals
 
 ## How To Run

@@ -27,6 +27,7 @@
         <button class="nav-item" type="button" data-view="projects">Projects</button>
         <button class="nav-item" type="button" data-view="networking">Networking</button>
         <button class="nav-item" type="button" data-view="interviews">Interviews</button>
+        <button class="nav-item" type="button" data-view="skills">Skills Lab</button>
         <button class="nav-item" type="button" data-view="resume">Resume</button>
         <button class="nav-item" type="button" data-view="goals">Goals</button>
       </nav>
@@ -87,6 +88,7 @@
           <article class="metric-card"><span>Certs in progress</span><strong id="activeCerts">0</strong></article>
           <article class="metric-card"><span>Portfolio projects</span><strong id="projectCount">0</strong></article>
           <article class="metric-card"><span>Network touches</span><strong id="networkCount">0</strong></article>
+          <article class="metric-card"><span>Skill coverage</span><strong id="skillCoverage">0%</strong></article>
         </section>
 
         <section class="dashboard-grid">
@@ -122,6 +124,24 @@
               <span>Live workspace health</span>
             </div>
             <div class="analytics-list" id="analyticsList"></div>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Skill Gap Map</h3>
+              <span>Target-role alignment</span>
+            </div>
+            <div class="skill-gap-list" id="dashboardSkillGaps"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Workspace Data Model</h3>
+              <span>Database-ready design</span>
+            </div>
+            <div class="schema-preview" id="schemaPreview"></div>
           </article>
         </section>
       </section>
@@ -249,6 +269,43 @@
         </article>
       </section>
 
+      <section class="view" id="skillsView">
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Skill Inventory</h3>
+              <span>Proof-backed skills</span>
+            </div>
+            <form class="entry-form" id="skillForm">
+              <input name="name" placeholder="Skill" required>
+              <select name="category">
+                <option>Data</option>
+                <option>AI</option>
+                <option>Software</option>
+                <option>Cloud</option>
+                <option>Business</option>
+              </select>
+              <input name="level" type="number" min="0" max="100" placeholder="Confidence %" required>
+              <input name="evidence" placeholder="Project, cert, or coursework proof">
+              <button class="primary-button" type="submit">Add</button>
+            </form>
+            <div class="card-list" id="skillsList"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Role Fit Analyzer</h3>
+              <span id="roleFitLabel">0% aligned</span>
+            </div>
+            <div class="skill-gap-list" id="skillsGapList"></div>
+            <div class="button-row">
+              <button class="primary-button" id="downloadSqlButton" type="button">Download SQL Schema</button>
+              <button class="secondary-button" id="downloadPlanButton" type="button">Download Career Plan</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <section class="view" id="resumeView">
         <div class="dashboard-grid">
           <article class="panel">
@@ -306,6 +363,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

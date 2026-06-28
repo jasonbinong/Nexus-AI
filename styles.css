@@ -325,7 +325,7 @@ h3 {
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
   gap: 14px;
 }
 
@@ -370,6 +370,10 @@ h3 {
   border-top-color: var(--blue);
 }
 
+.metric-card:nth-child(5) {
+  border-top-color: var(--coral);
+}
+
 .metric-card span,
 .panel-heading span {
   color: var(--muted);
@@ -406,7 +410,9 @@ h3 {
 .card-list,
 .table-list,
 .timeline-list,
-.analytics-list {
+.analytics-list,
+.skill-gap-list,
+.schema-preview {
   display: grid;
   gap: 12px;
 }
@@ -416,6 +422,8 @@ h3 {
 .table-row,
 .timeline-item,
 .analytics-item,
+.skill-gap-card,
+.schema-row,
 .empty-state {
   padding: 15px;
   border: 1px solid var(--line);
@@ -429,6 +437,31 @@ h3 {
 
 .analytics-item {
   border-left: 4px solid var(--green);
+}
+
+.skill-gap-card.missing {
+  border-left: 4px solid var(--coral);
+}
+
+.skill-gap-card.matched {
+  border-left: 4px solid var(--green);
+}
+
+.skill-gap-card h4,
+.schema-row strong {
+  margin: 0 0 6px;
+}
+
+.skill-gap-card p,
+.schema-row span {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.schema-row {
+  display: grid;
+  gap: 5px;
 }
 
 .coach-card h4,
