@@ -1,137 +1,20 @@
-const STORAGE_KEY = "nexus-ai-state-v1";
+const STORAGE_KEY = "nexus-ai-state-v2";
 
 const starterState = {
   profile: {
-    targetRole: "Data Analyst Intern",
-    major: "Information Systems",
-    graduation: "May 2029",
-    weeklyHours: 8
+    targetRole: "",
+    major: "",
+    graduation: "",
+    weeklyHours: 0
   },
-  applications: [
-    {
-      id: createId(),
-      company: "UMBC DoIT",
-      role: "Student IT Assistant",
-      status: "Applied",
-      deadline: "2026-07-12",
-      link: "",
-      notes: "Follow up with a concise email after one week."
-    },
-    {
-      id: createId(),
-      company: "Handshake",
-      role: "AI Data Trainer",
-      status: "Interview",
-      deadline: "2026-07-03",
-      link: "",
-      notes: "Prepare one AI evaluation example and one data quality story."
-    }
-  ],
-  certifications: [
-    {
-      id: createId(),
-      name: "PL-300 Power BI Data Analyst",
-      provider: "Microsoft",
-      progress: 28,
-      target: "2026-08-15",
-      link: ""
-    },
-    {
-      id: createId(),
-      name: "Google Advanced Data Analytics",
-      provider: "Google",
-      progress: 12,
-      target: "2026-09-01",
-      link: ""
-    }
-  ],
-  projects: [
-    {
-      id: createId(),
-      name: "CareerLens AI",
-      stack: "HTML, CSS, JavaScript",
-      stage: "Published",
-      link: "https://jasonbinong.github.io/CareerLens-AI/",
-      impact: "Analyzes career readiness signals and skill gaps for students."
-    },
-    {
-      id: createId(),
-      name: "15 Weeks at UMBC",
-      stack: "HTML, CSS, JavaScript",
-      stage: "Published",
-      link: "https://jasonbinong.github.io/15-Weeks-At-UMBC/",
-      impact: "Turns a semester experience into an interactive student game."
-    }
-  ],
-  skills: [
-    {
-      id: createId(),
-      name: "SQL",
-      category: "Data",
-      level: 72,
-      evidence: "Google Data Analytics coursework and planned CareerLens dataset analysis"
-    },
-    {
-      id: createId(),
-      name: "JavaScript",
-      category: "Software",
-      level: 78,
-      evidence: "Nexus AI, CareerLens AI, LearnWise AI, and 15 Weeks at UMBC"
-    },
-    {
-      id: createId(),
-      name: "Power BI",
-      category: "Data",
-      level: 45,
-      evidence: "Certification path and planned internship skill dashboard"
-    },
-    {
-      id: createId(),
-      name: "AI Model Evaluation",
-      category: "AI",
-      level: 62,
-      evidence: "CareerLens AI role analysis and AI evaluation certifications"
-    }
-  ],
-  networking: [
-    {
-      id: createId(),
-      name: "Color Stack mentor",
-      organization: "Color Stack",
-      status: "Follow up",
-      next: "2026-07-01",
-      notes: "Ask for feedback on portfolio project positioning."
-    }
-  ],
-  interviews: [
-    {
-      id: createId(),
-      role: "Data Analyst Intern",
-      company: "Campus employer",
-      type: "Behavioral",
-      date: "2026-07-10",
-      notes: "Practice STAR stories about learning JavaScript and SQL."
-    }
-  ],
-  goals: [
-    {
-      id: createId(),
-      goal: "Publish three portfolio projects",
-      category: "Portfolio",
-      progress: 67,
-      due: "2026-08-01",
-      nextStep: "Improve README screenshots and add LinkedIn descriptions."
-    },
-    {
-      id: createId(),
-      goal: "Apply to 20 internships",
-      category: "Internships",
-      progress: 25,
-      due: "2026-09-15",
-      nextStep: "Add five target roles by Sunday."
-    }
-  ],
-  resume: "Information Systems student focused on data analytics, AI evaluation, Power BI, JavaScript, SQL, and portfolio projects.",
+  applications: [],
+  certifications: [],
+  projects: [],
+  skills: [],
+  networking: [],
+  interviews: [],
+  goals: [],
+  resume: "",
   activity: []
 };
 
@@ -410,6 +293,7 @@ function clearWorkspace() {
     applications: [],
     certifications: [],
     projects: [],
+    skills: [],
     networking: [],
     interviews: [],
     goals: [],
@@ -699,6 +583,7 @@ function getReadinessTitle(score) {
 
 function getReadinessSummary(score) {
   const role = state.profile.targetRole || "your target role";
+  if (!state.profile.targetRole) return "Choose a target role and add your first applications, skills, projects, and goals to activate the workspace.";
   if (score >= 82) return `Your proof, pipeline, and follow-up system are strong enough for serious ${role} outreach.`;
   if (score >= 62) return `You are close. Add measurable project outcomes and keep moving applications toward interviews.`;
   if (score >= 36) return `Your foundation is forming. Turn each project, certification, and application into a tracked next action.`;
@@ -715,7 +600,9 @@ function generateCoachCards() {
 
   cards.push({
     title: "Pipeline move",
-    body: activeApps.length < 8
+    body: !state.profile.targetRole
+      ? "Start by saving a target role. The workspace will use that role to judge your pipeline, skills, and project proof."
+      : activeApps.length < 8
       ? `Build a stronger ${role} pipeline by adding at least three specific roles with deadlines and next actions.`
       : "Your application volume is healthy. Shift energy toward follow-ups, referrals, and interview prep."
   });
