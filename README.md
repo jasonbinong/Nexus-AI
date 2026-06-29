@@ -15,6 +15,7 @@ Nexus AI helps students manage the full career-building process instead of track
 ## Features
 
 - Personalized career readiness dashboard
+- Working FastAPI + SQLite backend in `backend/`
 - Editable internship application tracker with search and status filtering
 - Certification tracker with progress monitoring
 - Project portfolio tracker with links, tech stacks, and impact notes
@@ -30,6 +31,7 @@ Nexus AI helps students manage the full career-building process instead of track
 - Target-role skill gap analysis
 - Database-ready workspace schema preview
 - Downloadable SQL schema for backend/database planning
+- Backend endpoints for workspace data, readiness analytics, and skill-gap analysis
 - Downloadable career action plan
 - Local browser persistence with localStorage
 - Importable and exportable JSON snapshots
@@ -42,12 +44,17 @@ Nexus AI helps students manage the full career-building process instead of track
 - CSS
 - JavaScript
 - Browser localStorage
+- Python
+- FastAPI
+- SQLite
 
 ## What This Project Shows
 
 - Product thinking for student productivity and career management
 - Dashboard UX design for repeated daily use
 - Local data persistence and import/export workflows
+- Backend API design for career-workspace data
+- Relational database modeling with SQLite
 - Skill gap analysis tied to target roles
 - Database schema planning for a future backend
 - Systems analysis across applications, skills, networking, and goals
@@ -66,6 +73,7 @@ Nexus AI centralizes the student career workflow into one dashboard. It helps us
 
 - Started with a blank user workspace so each student builds their own profile
 - Used localStorage so the app works as a deployable static product on GitHub Pages
+- Added a separate FastAPI backend so the project can evolve into a full-stack product without breaking the static demo
 - Added skill-gap analysis so the dashboard does more than store information
 - Included a SQL schema export to show how the product could evolve into a backend/database system
 
@@ -76,8 +84,9 @@ This project strengthened my understanding of product design, state management, 
 ### Future Improvements
 
 - Add user authentication
-- Move saved workspace data into PostgreSQL
-- Add a backend API for user accounts and analytics
+- Connect the frontend directly to the FastAPI backend
+- Move saved workspace data from SQLite into PostgreSQL
+- Add user accounts and role-based access
 - Connect CareerLens AI recommendations directly into the Nexus AI skills plan
 
 ## How To Run
@@ -85,3 +94,29 @@ This project strengthened my understanding of product design, state management, 
 Open `index.html` in a browser.
 
 No installation is required.
+
+## Backend API
+
+The backend is optional for the GitHub Pages demo, but it is included for the full-stack version of the project.
+
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python seed.py
+uvicorn main:app --reload
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+To verify the SQLite schema before installing API dependencies:
+
+```bash
+cd backend
+python smoke_test.py
+```
