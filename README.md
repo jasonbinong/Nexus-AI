@@ -62,6 +62,13 @@ Nexus AI helps students manage the full career-building process instead of track
 - Database schema planning for a future backend
 - Systems analysis across applications, skills, networking, and goals
 
+## Portfolio Materials
+
+- [Demo script](DEMO_SCRIPT.md)
+- [Roadmap](ROADMAP.md)
+- [Ready-to-create GitHub issues](GITHUB_ISSUES.md)
+- [LinkedIn post draft](LINKEDIN_POST.md)
+
 ## Case Study
 
 ### Problem
