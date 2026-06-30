@@ -211,6 +211,46 @@ def build_snapshot() -> dict[str, Any]:
     return snapshot
 
 
+def clear_workspace(conn: sqlite3.Connection) -> None:
+    for table in COLLECTION_FIELDS:
+        conn.execute(f"DELETE FROM {table}")
+    conn.execute("DELETE FROM activity")
+    conn.execute(
+        """
+        UPDATE profiles
+        SET target_role = '', major = '', graduation = '', weekly_hours = 0, updated_at = ?
+        WHERE id = 1
+        """,
+        (now(),),
+    )
+    conn.execute("UPDATE resume_notes SET body = '', updated_at = ? WHERE id = 1", (now(),))
+
+
+def pick(raw: dict[str, Any], *keys: str, default: Any = "") -> Any:
+    for key in keys:
+        if key in raw and raw[key] is not None:
+            return raw[key]
+    return default
+
+
+def import_collection(conn: sqlite3.Connection, table: str, rows: list[dict[str, Any]]) -> None:
+    fields = COLLECTION_FIELDS[table]
+    for raw in rows:
+        item_id = pick(raw, "id", default=str(uuid.uuid4()))
+        values = []
+        for field in fields:
+            if table == "goals" and field == "next_step":
+                values.append(pick(raw, "next_step", "nextStep"))
+            else:
+                values.append(pick(raw, field))
+        columns = ("id", *fields, "created_at", "updated_at")
+        placeholders = ", ".join("?" for _ in columns)
+        conn.execute(
+            f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})",
+            [item_id, *values, now(), now()],
+        )
+
+
 @app.on_event("startup")
 def startup() -> None:
     init_db()
@@ -223,6 +263,48 @@ def health() -> dict[str, str]:
 
 @app.get("/snapshot")
 def snapshot() -> dict[str, Any]:
+    return build_snapshot()
+
+
+@app.get("/analytics/readiness")
+def readiness() -> dict[str, Any]:
+    snapshot_data = build_snapshot()
+    return {"analytics": snapshot_data["analytics"], "skill_gap": snapshot_data["skill_gap"]}
+
+
+@app.delete("/workspace/reset", status_code=204)
+def reset_workspace() -> None:
+    with connect() as conn:
+        clear_workspace(conn)
+        log_activity(conn, "Started a new workspace")
+
+
+@app.post("/workspace/import")
+def import_workspace(snapshot_data: dict[str, Any]) -> dict[str, Any]:
+    profile = snapshot_data.get("profile") or {}
+    with connect() as conn:
+        clear_workspace(conn)
+        conn.execute(
+            """
+            UPDATE profiles
+            SET target_role = ?, major = ?, graduation = ?, weekly_hours = ?, updated_at = ?
+            WHERE id = 1
+            """,
+            (
+                pick(profile, "target_role", "targetRole"),
+                pick(profile, "major"),
+                pick(profile, "graduation"),
+                int(pick(profile, "weekly_hours", "weeklyHours", default=0) or 0),
+                now(),
+            ),
+        )
+        conn.execute(
+            "UPDATE resume_notes SET body = ?, updated_at = ? WHERE id = 1",
+            (pick(snapshot_data, "resume"), now()),
+        )
+        for table in COLLECTION_FIELDS:
+            import_collection(conn, table, snapshot_data.get(table) or [])
+        log_activity(conn, "Imported workspace snapshot")
     return build_snapshot()
 
 
@@ -301,9 +383,3 @@ def delete_item(collection: str, item_id: str) -> None:
         if result.rowcount == 0:
             raise HTTPException(status_code=404, detail="Item not found")
         log_activity(conn, f"Deleted {collection[:-1] if collection.endswith('s') else collection}")
-
-
-@app.get("/analytics/readiness")
-def readiness() -> dict[str, Any]:
-    snapshot_data = build_snapshot()
-    return {"analytics": snapshot_data["analytics"], "skill_gap": snapshot_data["skill_gap"]}

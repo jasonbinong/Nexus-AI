@@ -59,3 +59,11 @@ This smoke test uses only the Python standard library, so it can run before inst
 ```bash
 python smoke_test.py
 ```
+
+## Run API Tests
+
+After installing the requirements, run:
+
+```bash
+pytest test_api_contract.py
+```

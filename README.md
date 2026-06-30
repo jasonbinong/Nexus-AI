@@ -16,6 +16,7 @@ Nexus AI helps students manage the full career-building process instead of track
 
 - Personalized career readiness dashboard
 - Working FastAPI + SQLite backend in `backend/`
+- Frontend can automatically connect to the backend during local development
 - Editable internship application tracker with search and status filtering
 - Certification tracker with progress monitoring
 - Project portfolio tracker with links, tech stacks, and impact notes
@@ -32,6 +33,7 @@ Nexus AI helps students manage the full career-building process instead of track
 - Database-ready workspace schema preview
 - Downloadable SQL schema for backend/database planning
 - Backend endpoints for workspace data, readiness analytics, and skill-gap analysis
+- Workspace reset and JSON snapshot import through the API
 - Downloadable career action plan
 - Local browser persistence with localStorage
 - Importable and exportable JSON snapshots
@@ -55,6 +57,7 @@ Nexus AI helps students manage the full career-building process instead of track
 - Local data persistence and import/export workflows
 - Backend API design for career-workspace data
 - Relational database modeling with SQLite
+- Full-stack integration between a JavaScript dashboard and FastAPI service
 - Skill gap analysis tied to target roles
 - Database schema planning for a future backend
 - Systems analysis across applications, skills, networking, and goals
@@ -84,7 +87,6 @@ This project strengthened my understanding of product design, state management, 
 ### Future Improvements
 
 - Add user authentication
-- Connect the frontend directly to the FastAPI backend
 - Move saved workspace data from SQLite into PostgreSQL
 - Add user accounts and role-based access
 - Connect CareerLens AI recommendations directly into the Nexus AI skills plan
@@ -114,9 +116,30 @@ Then open:
 http://127.0.0.1:8000/docs
 ```
 
+Run the frontend at the same time:
+
+```bash
+cd ..
+python -m http.server 8070
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8070/
+```
+
+When the backend is running, the app shows `API connected` and stores workspace data in SQLite. On GitHub Pages, it safely falls back to browser localStorage.
+
 To verify the SQLite schema before installing API dependencies:
 
 ```bash
 cd backend
 python smoke_test.py
+```
+
+To test the API contract after installing dependencies:
+
+```bash
+pytest test_api_contract.py
 ```

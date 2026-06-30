@@ -191,6 +191,26 @@ textarea {
   margin-left: clamp(0px, 10vw, 160px);
 }
 
+.sync-pill {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.sync-pill.online {
+  background: rgba(169, 223, 191, 0.26);
+  border-color: rgba(169, 223, 191, 0.48);
+}
+
 .eyebrow {
   margin: 0 0 12px;
   color: #fff;

@@ -1,4 +1,5 @@
 const STORAGE_KEY = "nexus-ai-state-v2";
+const API_BASE = getApiBase();
 
 const starterState = {
   profile: {
@@ -73,6 +74,7 @@ const schemas = {
 let state = loadState();
 let currentView = "dashboard";
 let editing = null;
+let backendOnline = false;
 
 const els = {
   navItems: [...document.querySelectorAll(".nav-item")],
@@ -117,7 +119,8 @@ const els = {
   editFields: document.querySelector("#editFields"),
   downloadResumeButton: document.querySelector("#downloadResumeButton"),
   downloadSqlButton: document.querySelector("#downloadSqlButton"),
-  downloadPlanButton: document.querySelector("#downloadPlanButton")
+  downloadPlanButton: document.querySelector("#downloadPlanButton"),
+  syncStatus: document.querySelector("#syncStatus")
 };
 
 document.querySelector("#applicationForm").addEventListener("submit", event => addFromForm(event, "applications"));
@@ -153,7 +156,89 @@ const roleRequirements = {
   "default": ["SQL", "JavaScript", "Data Analysis", "Generative AI", "GitHub", "Communication"]
 };
 
-render();
+initApp();
+
+async function initApp() {
+  backendOnline = await detectBackend();
+  updateSyncStatus();
+  if (backendOnline) await refreshFromBackend();
+  render();
+}
+
+function getApiBase() {
+  const params = new URLSearchParams(window.location.search);
+  const explicit = params.get("api") || localStorage.getItem("nexus-ai-api-base");
+  if (explicit) return explicit.replace(/\/$/, "");
+  if (["localhost", "127.0.0.1"].includes(window.location.hostname)) return "http://127.0.0.1:8000";
+  return "";
+}
+
+async function detectBackend() {
+  if (!API_BASE) return false;
+  try {
+    const response = await fetch(`${API_BASE}/health`, { cache: "no-store" });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+function updateSyncStatus(message) {
+  if (!els.syncStatus) return;
+  els.syncStatus.textContent = message || (backendOnline ? "API connected" : "Local mode");
+  els.syncStatus.classList.toggle("online", backendOnline);
+}
+
+async function refreshFromBackend() {
+  const snapshot = await apiRequest("/snapshot");
+  state = normalizeState(fromBackendSnapshot(snapshot));
+  saveState();
+}
+
+async function apiRequest(path, options = {}) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Request failed: ${response.status}`);
+  }
+  if (response.status === 204) return null;
+  return response.json();
+}
+
+function toBackendPayload(collection, item) {
+  if (collection === "goals") {
+    const { nextStep, ...rest } = item;
+    return { ...rest, next_step: nextStep || rest.next_step || "" };
+  }
+  return item;
+}
+
+function fromBackendSnapshot(snapshot) {
+  return {
+    profile: {
+      targetRole: snapshot.profile?.target_role || "",
+      major: snapshot.profile?.major || "",
+      graduation: snapshot.profile?.graduation || "",
+      weeklyHours: snapshot.profile?.weekly_hours || 0
+    },
+    applications: snapshot.applications || [],
+    certifications: snapshot.certifications || [],
+    projects: snapshot.projects || [],
+    skills: snapshot.skills || [],
+    networking: snapshot.networking || [],
+    interviews: snapshot.interviews || [],
+    goals: (snapshot.goals || []).map(goal => ({ ...goal, nextStep: goal.next_step || "" })),
+    resume: snapshot.resume || "",
+    activity: (snapshot.activity || []).map((item, index) => ({
+      id: `${item.created_at || "activity"}-${index}`,
+      at: item.created_at || "",
+      message: item.message || ""
+    }))
+  };
+}
 
 function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -191,14 +276,27 @@ function createId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function addFromForm(event, collection) {
+async function addFromForm(event, collection) {
   event.preventDefault();
   const form = event.currentTarget;
   const item = parseFormData(form, collection);
-  state[collection].push({ id: createId(), ...item });
-  addActivity(`Added ${singular(collection)}: ${displayName(collection, item)}`);
-  form.reset();
-  persistAndRender();
+  try {
+    if (backendOnline) {
+      await apiRequest(`/${collection}`, {
+        method: "POST",
+        body: JSON.stringify(toBackendPayload(collection, item))
+      });
+      await refreshFromBackend();
+    } else {
+      state[collection].push({ id: createId(), ...item });
+      addActivity(`Added ${singular(collection)}: ${displayName(collection, item)}`);
+      saveState();
+    }
+    form.reset();
+    render();
+  } catch (error) {
+    showError(error);
+  }
 }
 
 function parseFormData(form, collection) {
@@ -209,16 +307,35 @@ function parseFormData(form, collection) {
   return data;
 }
 
-function saveProfile(event) {
+async function saveProfile(event) {
   event.preventDefault();
-  state.profile = {
+  const profile = {
     targetRole: els.profileForm.targetRole.value.trim(),
     major: els.profileForm.major.value.trim(),
     graduation: els.profileForm.graduation.value.trim(),
     weeklyHours: clamp(Number(els.profileForm.weeklyHours.value || 0), 0, 80)
   };
-  addActivity("Updated career profile");
-  persistAndRender();
+  try {
+    if (backendOnline) {
+      await apiRequest("/profile", {
+        method: "PUT",
+        body: JSON.stringify({
+          target_role: profile.targetRole,
+          major: profile.major,
+          graduation: profile.graduation,
+          weekly_hours: profile.weeklyHours
+        })
+      });
+      await refreshFromBackend();
+    } else {
+      state.profile = profile;
+      addActivity("Updated career profile");
+      saveState();
+    }
+    render();
+  } catch (error) {
+    showError(error);
+  }
 }
 
 function openEdit(collection, id) {
@@ -247,7 +364,7 @@ function openEdit(collection, id) {
   els.editDialog.showModal();
 }
 
-function saveEdit(event) {
+async function saveEdit(event) {
   event.preventDefault();
   if (event.submitter && event.submitter.value === "cancel") {
     els.editDialog.close();
@@ -260,51 +377,85 @@ function saveEdit(event) {
   if (index === -1) return;
 
   const data = parseFormData(els.editForm, collection);
-  state[collection][index] = { ...state[collection][index], ...data };
-  addActivity(`Edited ${singular(collection)}: ${displayName(collection, state[collection][index])}`);
-  editing = null;
-  els.editDialog.close();
-  persistAndRender();
+  try {
+    if (backendOnline) {
+      await apiRequest(`/${collection}/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(toBackendPayload(collection, data))
+      });
+      await refreshFromBackend();
+    } else {
+      state[collection][index] = { ...state[collection][index], ...data };
+      addActivity(`Edited ${singular(collection)}: ${displayName(collection, state[collection][index])}`);
+      saveState();
+    }
+    editing = null;
+    els.editDialog.close();
+    render();
+  } catch (error) {
+    showError(error);
+  }
 }
 
-function deleteItem(collection, id) {
+async function deleteItem(collection, id) {
   const item = state[collection].find(entry => entry.id === id);
-  state[collection] = state[collection].filter(entry => entry.id !== id);
-  addActivity(`Removed ${singular(collection)}${item ? `: ${displayName(collection, item)}` : ""}`);
-  persistAndRender();
+  try {
+    if (backendOnline) {
+      await apiRequest(`/${collection}/${id}`, { method: "DELETE" });
+      await refreshFromBackend();
+    } else {
+      state[collection] = state[collection].filter(entry => entry.id !== id);
+      addActivity(`Removed ${singular(collection)}${item ? `: ${displayName(collection, item)}` : ""}`);
+      saveState();
+    }
+    render();
+  } catch (error) {
+    showError(error);
+  }
 }
 
-function saveResume() {
-  state.resume = els.resumeDraft.value.trim();
-  addActivity("Saved resume notes");
-  persistAndRender();
+async function saveResume() {
+  try {
+    if (backendOnline) {
+      await apiRequest("/resume", {
+        method: "PUT",
+        body: JSON.stringify({ body: els.resumeDraft.value.trim() })
+      });
+      await refreshFromBackend();
+    } else {
+      state.resume = els.resumeDraft.value.trim();
+      addActivity("Saved resume notes");
+      saveState();
+    }
+    render();
+  } catch (error) {
+    showError(error);
+  }
 }
 
 function downloadResume() {
   downloadFile("nexus-ai-resume-notes.txt", state.resume || "", "text/plain");
 }
 
-function clearWorkspace() {
+async function clearWorkspace() {
   const confirmed = window.confirm("Start a new blank workspace? This clears the current browser data after exporting is recommended.");
   if (!confirmed) return;
 
-  state = normalizeState({
-    profile: { targetRole: "", major: "", graduation: "", weeklyHours: 0 },
-    applications: [],
-    certifications: [],
-    projects: [],
-    skills: [],
-    networking: [],
-    interviews: [],
-    goals: [],
-    resume: "",
-    activity: []
-  });
-  addActivity("Started a new workspace");
-  currentView = "dashboard";
-  saveState();
-  switchView("dashboard");
-  render();
+  try {
+    if (backendOnline) {
+      await apiRequest("/workspace/reset", { method: "DELETE" });
+      await refreshFromBackend();
+    } else {
+      state = normalizeState(structuredClone(starterState));
+      addActivity("Started a new workspace");
+      saveState();
+    }
+    currentView = "dashboard";
+    switchView("dashboard");
+    render();
+  } catch (error) {
+    showError(error);
+  }
 }
 
 function persistAndRender() {
@@ -803,9 +954,7 @@ function importSnapshot(event) {
   const reader = new FileReader();
   reader.onload = () => {
     try {
-      state = normalizeState(JSON.parse(reader.result));
-      addActivity(`Imported snapshot: ${file.name}`);
-      persistAndRender();
+      importSnapshotData(JSON.parse(reader.result), file.name);
     } catch {
       window.alert("That file could not be imported. Use a Nexus AI JSON snapshot.");
     } finally {
@@ -813,6 +962,25 @@ function importSnapshot(event) {
     }
   };
   reader.readAsText(file);
+}
+
+async function importSnapshotData(snapshot, filename) {
+  try {
+    if (backendOnline) {
+      await apiRequest("/workspace/import", {
+        method: "POST",
+        body: JSON.stringify(snapshot)
+      });
+      await refreshFromBackend();
+    } else {
+      state = normalizeState(snapshot);
+      addActivity(`Imported snapshot: ${filename}`);
+      saveState();
+    }
+    render();
+  } catch (error) {
+    showError(error);
+  }
 }
 
 function switchView(view) {
@@ -908,4 +1076,10 @@ function escapeHtml(value) {
 
 function escapeAttribute(value) {
   return escapeHtml(value).replaceAll("`", "&#096;");
+}
+
+function showError(error) {
+  console.error(error);
+  updateSyncStatus("Action failed");
+  window.alert("Nexus AI could not complete that action. Check that the backend is running, then try again.");
 }
