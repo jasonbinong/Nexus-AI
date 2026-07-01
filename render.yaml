@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: nexus-ai-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: NEXUS_DB_PATH
+        value: /var/data/nexus.db
+      - key: NEXUS_ALLOWED_ORIGINS
+        value: https://jasonbinong.github.io,http://127.0.0.1:8070,http://localhost:8070
+    disk:
+      name: nexus-ai-sqlite
+      mountPath: /var/data
+      sizeGB: 1

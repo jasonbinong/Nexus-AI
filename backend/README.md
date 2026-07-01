@@ -29,6 +29,16 @@ uvicorn main:app --reload
 
 Optional environment variables are documented in `.env.example`.
 
+## Deploy
+
+The repo includes deployment files:
+
+- Root `render.yaml` for Render
+- `backend/Procfile` for Railway-style process startup
+- `backend/runtime.txt` for Python runtime pinning
+
+See the root `DEPLOYMENT.md` for full instructions.
+
 Open the API docs:
 
 ```text

@@ -71,6 +71,7 @@ Nexus AI helps students manage the full career-building process instead of track
 - [Ready-to-create GitHub issues](GITHUB_ISSUES.md)
 - [LinkedIn post draft](LINKEDIN_POST.md)
 - [Architecture](ARCHITECTURE.md)
+- [Deployment guide](DEPLOYMENT.md)
 - [Security policy](SECURITY.md)
 - [Privacy notes](PRIVACY.md)
 - [Contribution guide](CONTRIBUTING.md)
@@ -146,6 +147,14 @@ http://127.0.0.1:8070/
 ```
 
 When the backend is running, the app shows `API connected` and stores workspace data in SQLite. On GitHub Pages, it safely falls back to browser localStorage.
+
+To connect the live GitHub Pages frontend to a deployed backend, open:
+
+```text
+https://jasonbinong.github.io/Nexus-AI/?api=https://YOUR-BACKEND-URL
+```
+
+See [Deployment Guide](DEPLOYMENT.md) for Render and Railway setup.
 
 To verify the SQLite schema before installing API dependencies:
 

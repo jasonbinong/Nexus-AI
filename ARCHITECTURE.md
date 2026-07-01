@@ -98,9 +98,9 @@ You can override the API URL with:
 The next production architecture would be:
 
 ```text
-Frontend: Vercel or GitHub Pages
+Frontend: GitHub Pages, Vercel, or Netlify
 Backend: Render, Railway, or Fly.io
-Database: PostgreSQL
+Database: SQLite prototype with persistent disk, then PostgreSQL for real users
 Auth: Clerk, Firebase Auth, or FastAPI auth
 AI Layer: Claude/OpenAI API with transparent recommendation explanations
 ```
