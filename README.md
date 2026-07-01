@@ -4,6 +4,8 @@
 
 Nexus AI is a student career operating system for ambitious college students. It brings applications, certifications, projects, networking, interview preparation, resume notes, goals, and coaching into one organized dashboard.
 
+Project status: active portfolio product and startup exploration.
+
 ## Live Demo
 
 [Open Nexus AI](https://jasonbinong.github.io/Nexus-AI/)
@@ -68,6 +70,11 @@ Nexus AI helps students manage the full career-building process instead of track
 - [Roadmap](ROADMAP.md)
 - [Ready-to-create GitHub issues](GITHUB_ISSUES.md)
 - [LinkedIn post draft](LINKEDIN_POST.md)
+- [Architecture](ARCHITECTURE.md)
+- [Security policy](SECURITY.md)
+- [Privacy notes](PRIVACY.md)
+- [Contribution guide](CONTRIBUTING.md)
+- [Changelog](CHANGELOG.md)
 
 ## Case Study
 
@@ -97,6 +104,8 @@ This project strengthened my understanding of product design, state management, 
 - Move saved workspace data from SQLite into PostgreSQL
 - Add user accounts and role-based access
 - Connect CareerLens AI recommendations directly into the Nexus AI skills plan
+- Deploy the backend with production CORS and environment configuration
+- Add frontend test coverage
 
 ## How To Run
 

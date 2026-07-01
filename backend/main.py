@@ -15,6 +15,11 @@ from pydantic import BaseModel, Field
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("NEXUS_DB_PATH", BASE_DIR / "nexus.db"))
 SCHEMA_PATH = BASE_DIR / "schema.sql"
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("NEXUS_ALLOWED_ORIGINS", "http://127.0.0.1:8070,http://localhost:8070").split(",")
+    if origin.strip()
+]
 
 COLLECTION_FIELDS: dict[str, tuple[str, ...]] = {
     "applications": ("company", "role", "status", "deadline", "link", "notes"),
@@ -94,7 +99,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )

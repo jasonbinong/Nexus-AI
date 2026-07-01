@@ -27,6 +27,8 @@ python seed.py
 uvicorn main:app --reload
 ```
 
+Optional environment variables are documented in `.env.example`.
+
 Open the API docs:
 
 ```text
