@@ -461,6 +461,11 @@ h3 {
   border-left: 4px solid var(--gold);
 }
 
+.action-card.is-done {
+  border-left-color: var(--green);
+  background: rgba(169, 223, 191, 0.22);
+}
+
 .action-card-top {
   margin-bottom: 8px;
   display: flex;
@@ -555,6 +560,14 @@ h3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 16px;
+}
+
+.onboarding-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.case-study-hero {
+  grid-template-columns: minmax(0, 1fr) 150px;
 }
 
 input,

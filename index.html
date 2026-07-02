@@ -30,6 +30,8 @@
         <button class="nav-item" type="button" data-view="skills">Skills Lab</button>
         <button class="nav-item" type="button" data-view="resume">Resume</button>
         <button class="nav-item" type="button" data-view="goals">Goals</button>
+        <button class="nav-item" type="button" data-view="onboarding">Onboarding</button>
+        <button class="nav-item" type="button" data-view="caseStudy">Case Study</button>
       </nav>
     </aside>
 
@@ -351,6 +353,88 @@
           <div class="card-list" id="goalsList"></div>
         </article>
       </section>
+
+      <section class="view" id="onboardingView">
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Student Onboarding</h3>
+              <span>Build a workspace in 2 minutes</span>
+            </div>
+            <form class="entry-form onboarding-form" id="onboardingForm">
+              <input name="targetRole" placeholder="Target role" required>
+              <input name="major" placeholder="Major" required>
+              <input name="graduation" placeholder="Graduation year or term" required>
+              <input name="weeklyHours" type="number" min="0" max="80" placeholder="Weekly focus hours" required>
+              <select name="primaryGoal">
+                <option>Land an internship</option>
+                <option>Build a stronger portfolio</option>
+                <option>Prepare for interviews</option>
+                <option>Choose what to learn next</option>
+              </select>
+              <button class="primary-button" type="submit">Create Plan</button>
+            </form>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Launch Checklist</h3>
+              <span id="onboardingProgress">0% complete</span>
+            </div>
+            <div class="action-plan-list" id="onboardingChecklist"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="caseStudyView">
+        <section class="hero-card case-study-hero">
+          <div>
+            <p class="eyebrow">Product case study</p>
+            <h3>Nexus AI turns career prep into a trackable system.</h3>
+            <p>Students usually spread applications, projects, certifications, networking, and resume drafts across disconnected tools. Nexus brings those workflows into one operating system and generates readiness signals from the data students already maintain.</p>
+          </div>
+          <div class="score-ring">
+            <span id="caseStudyScore">0</span>
+            <small>/100</small>
+          </div>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Problem</h3>
+              <span>Student workflow gap</span>
+            </div>
+            <div class="coach-list" id="caseStudyProblem"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>System Design</h3>
+              <span>How the product works</span>
+            </div>
+            <div class="schema-preview" id="caseStudySystem"></div>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Evidence</h3>
+              <span>Current workspace</span>
+            </div>
+            <div class="analytics-list" id="caseStudyEvidence"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Next Version</h3>
+              <span>Startup path</span>
+            </div>
+            <div class="action-plan-list" id="caseStudyRoadmap"></div>
+          </article>
+        </section>
+      </section>
     </section>
   </main>
 
@@ -368,6 +452,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

@@ -29,6 +29,9 @@ Nexus AI helps students manage the full career-building process instead of track
 - Frontend automatically connects to the hosted Render backend on GitHub Pages
 - One-click recruiter sample workspace with realistic applications, projects, skills, goals, and resume notes
 - Backend health-check timeout so the app quickly falls back to local mode when an API is unavailable
+- Guided onboarding flow that turns a student's target role, major, timeline, and weekly hours into a first action plan
+- Built-in product case study view explaining the problem, system design, evidence, and startup roadmap
+- Rule-based resume feedback with a resume strength score and targeted bullet recommendations
 - Editable internship application tracker with search and status filtering
 - Certification tracker with progress monitoring
 - Project portfolio tracker with links, tech stacks, and impact notes
@@ -71,6 +74,7 @@ Nexus AI helps students manage the full career-building process instead of track
 - Local data persistence and import/export workflows
 - Backend API design for career-workspace data
 - Relational database modeling with SQLite
+- Auth and PostgreSQL upgrade planning for multi-user persistence
 - Full-stack integration between a JavaScript dashboard and FastAPI service
 - Skill gap analysis tied to target roles
 - Prioritized action planning from applications, projects, skills, goals, and deadlines
@@ -85,6 +89,8 @@ Nexus AI helps students manage the full career-building process instead of track
 - [LinkedIn post draft](LINKEDIN_POST.md)
 - [Architecture](ARCHITECTURE.md)
 - [Deployment guide](DEPLOYMENT.md)
+- [Auth and PostgreSQL upgrade plan](AUTH_POSTGRESQL_PLAN.md)
+- [Demo video script](DEMO_VIDEO_SCRIPT.md)
 - [Security policy](SECURITY.md)
 - [Privacy notes](PRIVACY.md)
 - [Contribution guide](CONTRIBUTING.md)
@@ -114,9 +120,9 @@ This project strengthened my understanding of product design, state management, 
 
 ### Future Improvements
 
-- Add user authentication
-- Move saved workspace data from SQLite into PostgreSQL
-- Add user accounts and role-based access
+- Implement Clerk authentication using the documented auth plan
+- Move saved workspace data from SQLite into PostgreSQL using `backend/postgres_schema.sql`
+- Add user accounts and role-based access controls
 - Connect CareerLens AI recommendations directly into the Nexus AI skills plan
 - Harden the hosted backend for production authentication, rate limits, and PostgreSQL persistence
 - Add frontend test coverage

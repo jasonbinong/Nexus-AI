@@ -16,6 +16,9 @@ const starterState = {
   networking: [],
   interviews: [],
   goals: [],
+  onboarding: {
+    primaryGoal: ""
+  },
   resume: "",
   activity: []
 };
@@ -213,6 +216,9 @@ const sampleWorkspace = {
       notes: "Walk through dashboard problem, data model, user workflow, and next product decisions."
     }
   ],
+  onboarding: {
+    primaryGoal: "Land an internship"
+  },
   goals: [
     {
       id: "sample-goal-1",
@@ -354,6 +360,14 @@ const els = {
   goalsList: document.querySelector("#goalsList"),
   resumeDraft: document.querySelector("#resumeDraft"),
   resumeCoach: document.querySelector("#resumeCoach"),
+  onboardingForm: document.querySelector("#onboardingForm"),
+  onboardingChecklist: document.querySelector("#onboardingChecklist"),
+  onboardingProgress: document.querySelector("#onboardingProgress"),
+  caseStudyScore: document.querySelector("#caseStudyScore"),
+  caseStudyProblem: document.querySelector("#caseStudyProblem"),
+  caseStudySystem: document.querySelector("#caseStudySystem"),
+  caseStudyEvidence: document.querySelector("#caseStudyEvidence"),
+  caseStudyRoadmap: document.querySelector("#caseStudyRoadmap"),
   editDialog: document.querySelector("#editDialog"),
   editForm: document.querySelector("#editForm"),
   editTitle: document.querySelector("#editTitle"),
@@ -383,6 +397,7 @@ els.importFile.addEventListener("change", importSnapshot);
 els.sampleButton.addEventListener("click", loadSampleWorkspace);
 els.clearButton.addEventListener("click", clearWorkspace);
 els.profileForm.addEventListener("submit", saveProfile);
+els.onboardingForm.addEventListener("submit", saveOnboarding);
 els.applicationSearch.addEventListener("input", renderApplications);
 els.applicationFilter.addEventListener("change", renderApplications);
 els.editForm.addEventListener("submit", saveEdit);
@@ -506,6 +521,7 @@ function normalizeState(raw) {
     if (Array.isArray(next[key])) next[key] = Array.isArray(raw[key]) ? raw[key] : [];
   });
   next.profile = { ...starterState.profile, ...(raw.profile || {}) };
+  next.onboarding = { ...starterState.onboarding, ...(raw.onboarding || {}) };
   next.resume = typeof raw.resume === "string" ? raw.resume : starterState.resume;
   next.activity = Array.isArray(raw.activity) ? raw.activity.slice(0, 50) : [];
 
@@ -585,6 +601,86 @@ async function saveProfile(event) {
   } catch (error) {
     showError(error);
   }
+}
+
+async function saveOnboarding(event) {
+  event.preventDefault();
+  const data = new FormData(event.currentTarget);
+  const profile = {
+    targetRole: data.get("targetRole").trim(),
+    major: data.get("major").trim(),
+    graduation: data.get("graduation").trim(),
+    weeklyHours: Number(data.get("weeklyHours") || 0)
+  };
+  state.profile = profile;
+  state.onboarding = { primaryGoal: data.get("primaryGoal") || "Land an internship" };
+  addActivity(`Completed onboarding for ${profile.targetRole}`);
+
+  try {
+    if (backendOnline) {
+      await apiRequest("/profile", {
+        method: "PUT",
+        body: JSON.stringify({
+          target_role: profile.targetRole,
+          major: profile.major,
+          graduation: profile.graduation,
+          weekly_hours: profile.weeklyHours
+        })
+      });
+      await refreshFromBackend();
+      state.onboarding = { primaryGoal: data.get("primaryGoal") || "Land an internship" };
+    }
+    saveState();
+    currentView = "dashboard";
+    switchView("dashboard");
+    render();
+  } catch (error) {
+    showError(error);
+  }
+}
+
+function getOnboardingChecklist() {
+  return [
+    {
+      title: "Save a target role",
+      body: "This lets Nexus judge your skills, projects, and weekly priorities against a specific direction.",
+      time: "2 min",
+      done: Boolean(state.profile.targetRole)
+    },
+    {
+      title: "Add three active applications",
+      body: "A pipeline gives the dashboard enough signal to prioritize deadlines and follow-ups.",
+      time: "15 min",
+      done: state.applications.filter(app => !["Rejected", "Offer"].includes(app.status)).length >= 3
+    },
+    {
+      title: "Add two public projects",
+      body: "Recruiters need proof. Link GitHub, demos, screenshots, and a result statement.",
+      time: "20 min",
+      done: state.projects.filter(project => project.link).length >= 2
+    },
+    {
+      title: "Track five proof-backed skills",
+      body: "Every skill should point to a project, certification, course, or work example.",
+      time: "15 min",
+      done: state.skills.filter(skill => skill.evidence).length >= 5
+    },
+    {
+      title: "Write resume notes",
+      body: "Use the resume vault to draft bullets before polishing your official PDF.",
+      time: "20 min",
+      done: state.resume.trim().length > 80
+    }
+  ];
+}
+
+function caseStudyCard(title, body) {
+  return `
+    <div class="coach-card">
+      <h4>${escapeHtml(title)}</h4>
+      <p>${escapeHtml(body)}</p>
+    </div>
+  `;
 }
 
 function openEdit(collection, id) {
@@ -723,6 +819,8 @@ function render() {
   renderInterviews();
   renderGoals();
   renderResume();
+  renderOnboarding();
+  renderCaseStudy();
 }
 
 function renderProfile() {
@@ -730,6 +828,76 @@ function renderProfile() {
   els.profileForm.major.value = state.profile.major || "";
   els.profileForm.graduation.value = state.profile.graduation || "";
   els.profileForm.weeklyHours.value = state.profile.weeklyHours || "";
+}
+
+function renderOnboarding() {
+  if (!els.onboardingForm) return;
+  els.onboardingForm.targetRole.value = state.profile.targetRole || "";
+  els.onboardingForm.major.value = state.profile.major || "";
+  els.onboardingForm.graduation.value = state.profile.graduation || "";
+  els.onboardingForm.weeklyHours.value = state.profile.weeklyHours || "";
+  els.onboardingForm.primaryGoal.value = state.onboarding.primaryGoal || "Land an internship";
+
+  const items = getOnboardingChecklist();
+  const completed = items.filter(item => item.done).length;
+  els.onboardingProgress.textContent = `${Math.round((completed / items.length) * 100)}% complete`;
+  els.onboardingChecklist.innerHTML = items.map(item => `
+    <div class="action-card ${item.done ? "is-done" : ""}">
+      <div class="action-card-top">
+        <span>${item.done ? "Complete" : "Next"}</span>
+        <strong>${escapeHtml(item.time)}</strong>
+      </div>
+      <h4>${escapeHtml(item.title)}</h4>
+      <p>${escapeHtml(item.body)}</p>
+    </div>
+  `).join("");
+}
+
+function renderCaseStudy() {
+  if (!els.caseStudyScore) return;
+  const score = calculateCareerScore();
+  els.caseStudyScore.textContent = score;
+  els.caseStudyScore.closest(".score-ring").style.setProperty("--score", score);
+  els.caseStudyProblem.innerHTML = [
+    ["Fragmented career prep", "Students manage applications, projects, networking, certifications, and resume notes in separate places, so progress is hard to measure."],
+    ["Weak feedback loops", "A student may be busy without knowing whether their work improves internship readiness."],
+    ["Proof is scattered", "Recruiters need visible project links, outcomes, and skills, but students often do not connect those pieces clearly."]
+  ].map(([title, body]) => caseStudyCard(title, body)).join("");
+
+  els.caseStudySystem.innerHTML = [
+    ["Frontend", "Static GitHub Pages dashboard with local fallback and production API detection"],
+    ["Backend", "FastAPI service on Render with workspace import, CRUD endpoints, readiness analytics, and health checks"],
+    ["Data model", "Profile, applications, certifications, projects, skills, networking, interviews, goals, resume notes, and activity"],
+    ["Intelligence layer", "Rule-based coaching, skill-gap analysis, weekly planning, deadline tracking, and resume scoring"]
+  ].map(([name, fields]) => `
+    <div class="schema-row">
+      <strong>${escapeHtml(name)}</strong>
+      <span>${escapeHtml(fields)}</span>
+    </div>
+  `).join("");
+
+  els.caseStudyEvidence.innerHTML = generateAnalytics().map(item => `
+    <div class="analytics-item">
+      <span>${escapeHtml(item.label)}</span>
+      <strong>${escapeHtml(item.value)}</strong>
+    </div>
+  `).join("");
+
+  els.caseStudyRoadmap.innerHTML = [
+    actionItem("Add authentication", "Use Clerk or Firebase so each student owns a private workspace.", "Phase 1", "Next"),
+    actionItem("Move storage to PostgreSQL", "Use persistent relational storage for real users, reporting, and cohort analytics.", "Phase 1", "Next"),
+    actionItem("Add true AI feedback", "Connect resume review, interview practice, and roadmap generation to an LLM API.", "Phase 2", "Later"),
+    actionItem("Pilot with UMBC students", "Collect feedback from classmates and career advisors before scaling.", "Phase 3", "Later")
+  ].map((item, index) => `
+    <div class="action-card priority-${index + 1}">
+      <div class="action-card-top">
+        <span>${escapeHtml(item.due)}</span>
+        <strong>${escapeHtml(item.time)}</strong>
+      </div>
+      <h4>${escapeHtml(item.action)}</h4>
+      <p>${escapeHtml(item.reason)}</p>
+    </div>
+  `).join("");
 }
 
 function renderDashboard() {
@@ -974,12 +1142,14 @@ function renderWeeklyPlan() {
 
 function renderSchemaPreview() {
   const tables = [
+    ["users", "auth_provider, auth_subject, email, created_at"],
     ["students", "profile_id, target_role, major, graduation, weekly_hours"],
     ["applications", "company, role, status, deadline, link, notes"],
     ["skills", "name, category, confidence_level, evidence"],
     ["projects", "name, tech_stack, stage, link, impact"],
     ["networking", "contact_name, organization, status, next_follow_up"],
-    ["goals", "goal, category, progress, due_date, next_step"]
+    ["goals", "goal, category, progress, due_date, next_step"],
+    ["activity", "user_id, message, created_at"]
   ];
   return tables.map(([name, fields]) => `
     <div class="schema-row">
@@ -1161,8 +1331,40 @@ function dedupePlan(plan) {
 
 function generateResumeCoach() {
   const text = state.resume.toLowerCase();
+  const raw = state.resume.trim();
   const publicProjects = state.projects.filter(project => project.link);
+  const bullets = raw.split("\n").map(line => line.trim()).filter(line => line.startsWith("-") || line.startsWith("*"));
+  const actionVerbs = ["built", "created", "designed", "developed", "deployed", "analyzed", "implemented", "improved", "automated", "modeled", "tracked", "evaluated"];
+  const tools = ["javascript", "python", "sql", "fastapi", "sqlite", "power bi", "excel", "github", "render", "api", "html", "css"];
+  const hasMetric = /(\d+%|\d+\+|\d+\s?(users|projects|applications|workflows|hours|roles|records)|\/100)/i.test(raw);
+  const actionCount = actionVerbs.filter(verb => text.includes(verb)).length;
+  const toolCount = tools.filter(tool => text.includes(tool)).length;
+  const bulletQuality = bullets.filter(line => {
+    const lower = line.toLowerCase();
+    return actionVerbs.some(verb => lower.includes(verb)) && tools.some(tool => lower.includes(tool)) && /result|impact|deployed|reduced|increased|tracked|centralized|connected|improved|generated/.test(lower);
+  }).length;
+  const score = Math.min(
+    100,
+    Math.round(
+      (raw.length > 160 ? 18 : raw.length > 60 ? 10 : 0) +
+      Math.min(bullets.length * 8, 24) +
+      Math.min(actionCount * 6, 18) +
+      Math.min(toolCount * 5, 20) +
+      (hasMetric ? 12 : 0) +
+      Math.min(bulletQuality * 8, 16)
+    )
+  );
+  const strongestProject = state.projects.find(project => project.link && project.impact) || publicProjects[0];
+
   return [
+    {
+      title: `Resume strength: ${score}/100`,
+      body: score >= 80
+        ? "Your notes are strong enough to polish into resume bullets. Tighten wording and keep the most measurable proof."
+        : score >= 55
+        ? "Your draft has a useful base. Add more measurable outcomes, named tools, and public project proof."
+        : "Start with 3-4 bullets using action + tool + result. Nexus can help you choose proof from your project tracker."
+    },
     {
       title: "Public proof",
       body: publicProjects.length
@@ -1177,9 +1379,21 @@ function generateResumeCoach() {
     },
     {
       title: "Impact language",
-      body: text.includes("%") || text.includes("built") || text.includes("created")
-        ? "You have some action language. Add numbers, users, scope, or outcomes where truthful."
-        : "Rewrite bullets as action + tool + result, such as built a JavaScript tracker that organizes applications and deadlines."
+      body: hasMetric
+        ? "You are using measurable language. Keep metrics truthful and connect each number to a result."
+        : "Add numbers where truthful: workflows tracked, projects shipped, roles analyzed, response quality scored, or time saved."
+    },
+    {
+      title: "Bullet structure",
+      body: bulletQuality
+        ? `${bulletQuality} bullet${bulletQuality === 1 ? " already follows" : "s already follow"} action + tool + result. Make every project bullet match that pattern.`
+        : "Rewrite one bullet as: built/deployed/analyzed + tool or method + result for a student, recruiter, or workflow."
+    },
+    {
+      title: "Best project to feature",
+      body: strongestProject
+        ? `Lead with ${strongestProject.name}: ${strongestProject.impact || "add a measurable result and link it to your target role."}`
+        : "Add at least one project link and impact note so your resume has evidence beyond coursework."
     }
   ];
 }
@@ -1392,7 +1606,9 @@ function switchView(view) {
     interviews: "Interview Prep",
     skills: "Skills Lab",
     resume: "Resume Builder",
-    goals: "Career Goals"
+    goals: "Career Goals",
+    onboarding: "Onboarding",
+    caseStudy: "Case Study"
   };
 
   currentView = view;
