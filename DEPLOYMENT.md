@@ -28,7 +28,7 @@ Steps:
 4. Confirm these environment variables:
 
 ```text
-NEXUS_DB_PATH=/var/data/nexus.db
+NEXUS_DB_PATH=/tmp/nexus.db
 NEXUS_ALLOWED_ORIGINS=https://jasonbinong.github.io,http://127.0.0.1:8070,http://localhost:8070
 ```
 
@@ -42,8 +42,10 @@ https://YOUR-RENDER-SERVICE.onrender.com/health
 Expected response:
 
 ```json
-{"status":"ok","database":"/var/data/nexus.db"}
+{"status":"ok","database":"/tmp/nexus.db"}
 ```
+
+Note: Render free web services do not support persistent disks. The free deployment is suitable for demos, but data can reset when the service restarts. Use a paid persistent disk or PostgreSQL before real student users.
 
 ## Connect Frontend To Backend
 
