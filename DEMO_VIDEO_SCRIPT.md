@@ -2,6 +2,12 @@
 
 ## 45-60 Second Walkthrough
 
+Use these README screenshots as your visual anchors:
+
+- `assets/nexus-dashboard.png`
+- `assets/nexus-resume-coach.png`
+- `assets/nexus-case-study.png`
+
 ### 1. Open With The Problem
 
 "Nexus AI is a career operating system for college students. Instead of tracking internships, projects, certifications, networking, interviews, and resume notes across separate tools, Nexus puts the entire career workflow in one dashboard."
@@ -29,6 +35,10 @@ Show:
 
 "The dashboard generates readiness signals from the workspace data, so it is more than a storage tool."
 
+Recommended line:
+
+"This is the part I wanted to feel different from a normal tracker. Nexus does not just store tasks; it turns the student's career activity into readiness signals and next actions."
+
 ### 5. Show Resume Feedback
 
 Open `Resume`.
@@ -40,6 +50,10 @@ Open `Resume`.
 Open `Case Study`.
 
 "I also built a product case study view that explains the problem, system design, data model, and startup roadmap."
+
+Recommended line:
+
+"I added this because I want recruiters to see not just the interface, but how I think through product requirements, data models, and future technical tradeoffs."
 
 ### 7. Close With The Backend
 

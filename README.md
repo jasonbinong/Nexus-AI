@@ -22,6 +22,20 @@ Backend health check:
 
 Nexus AI helps students manage the full career-building process instead of tracking everything across scattered notes, spreadsheets, and tabs. It is built around repeatable workflows: apply, follow up, improve skills, prepare for interviews, update projects, and monitor progress over time.
 
+## Product Screenshots
+
+### Career Readiness Dashboard
+
+![Nexus AI dashboard](assets/nexus-dashboard.png)
+
+### Resume Coach
+
+![Nexus AI resume coach](assets/nexus-resume-coach.png)
+
+### Product Case Study
+
+![Nexus AI case study](assets/nexus-case-study.png)
+
 ## Features
 
 - Personalized career readiness dashboard
