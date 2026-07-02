@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -278,10 +278,11 @@ def readiness() -> dict[str, Any]:
 
 
 @app.delete("/workspace/reset", status_code=204)
-def reset_workspace() -> None:
+def reset_workspace() -> Response:
     with connect() as conn:
         clear_workspace(conn)
         log_activity(conn, "Started a new workspace")
+    return Response(status_code=204)
 
 
 @app.post("/workspace/import")
@@ -381,10 +382,11 @@ def update_item(collection: str, item_id: str, item: CollectionItem) -> dict[str
 
 
 @app.delete("/{collection}/{item_id}", status_code=204)
-def delete_item(collection: str, item_id: str) -> None:
+def delete_item(collection: str, item_id: str) -> Response:
     require_collection(collection)
     with connect() as conn:
         result = conn.execute(f"DELETE FROM {collection} WHERE id = ?", (item_id,))
         if result.rowcount == 0:
             raise HTTPException(status_code=404, detail="Item not found")
         log_activity(conn, f"Deleted {collection[:-1] if collection.endswith('s') else collection}")
+    return Response(status_code=204)
