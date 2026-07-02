@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-02
+
+### Added
+
+- Weekly career plan generator with prioritized actions
+- Time estimates, due timing, and recommendation reasons for each weekly action
+- Copy plan button with text export fallback
+- Richer career plan download format
+
+### Changed
+
+- Replaced the basic weekly task list with a structured action-plan panel
+
 ## 2026-06-30
 
 ### Added

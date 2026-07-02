@@ -427,6 +427,7 @@ h3 {
 
 .coach-list,
 .task-list,
+.action-plan-list,
 .card-list,
 .table-list,
 .timeline-list,
@@ -438,6 +439,7 @@ h3 {
 }
 
 .coach-card,
+.action-card,
 .data-card,
 .table-row,
 .timeline-item,
@@ -453,6 +455,30 @@ h3 {
 .coach-card,
 .timeline-item {
   border-left: 4px solid var(--blue);
+}
+
+.action-card {
+  border-left: 4px solid var(--gold);
+}
+
+.action-card-top {
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.action-card-top span,
+.action-card small {
+  color: var(--gold);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.action-card-top strong {
+  color: var(--muted);
+  font-size: 0.8rem;
 }
 
 .analytics-item {
@@ -485,11 +511,13 @@ h3 {
 }
 
 .coach-card h4,
+.action-card h4,
 .data-card h4 {
   margin: 0 0 6px;
 }
 
 .coach-card p,
+.action-card p,
 .data-card p,
 .table-row p {
   margin: 0;

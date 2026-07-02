@@ -10,6 +10,7 @@ Nexus AI is being built as a student career operating system: a single workspace
 - Browser localStorage fallback for GitHub Pages
 - Career readiness scoring
 - Target-role skill-gap analysis
+- Weekly career plan generator
 - Workspace import/export
 - Resume notes and coaching checklist
 - Backend smoke test and API contract test
@@ -54,7 +55,7 @@ Acceptance criteria:
 
 ### 5. AI Coaching Layer
 
-Add an optional LLM-powered coaching layer that summarizes workspace progress and recommends next actions.
+Add an optional LLM-powered coaching layer on top of the rules-based weekly plan generator.
 
 Acceptance criteria:
 - AI output is clearly labeled as guidance

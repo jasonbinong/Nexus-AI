@@ -27,6 +27,7 @@ Nexus AI helps students manage the full career-building process instead of track
 - Resume notes and resume coaching checklist
 - Semester career goals
 - AI-style coaching generated from live workspace data
+- Weekly career plan generator with priorities, reasons, time estimates, and due timing
 - Upcoming deadline timeline
 - Pipeline analytics
 - Career profile setup
@@ -37,6 +38,7 @@ Nexus AI helps students manage the full career-building process instead of track
 - Backend endpoints for workspace data, readiness analytics, and skill-gap analysis
 - Workspace reset and JSON snapshot import through the API
 - Downloadable career action plan
+- Copyable weekly action plan
 - Local browser persistence with localStorage
 - Importable and exportable JSON snapshots
 - Downloadable resume notes
@@ -61,6 +63,7 @@ Nexus AI helps students manage the full career-building process instead of track
 - Relational database modeling with SQLite
 - Full-stack integration between a JavaScript dashboard and FastAPI service
 - Skill gap analysis tied to target roles
+- Prioritized action planning from applications, projects, skills, goals, and deadlines
 - Database schema planning for a future backend
 - Systems analysis across applications, skills, networking, and goals
 

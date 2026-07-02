@@ -120,6 +120,7 @@ const els = {
   downloadResumeButton: document.querySelector("#downloadResumeButton"),
   downloadSqlButton: document.querySelector("#downloadSqlButton"),
   downloadPlanButton: document.querySelector("#downloadPlanButton"),
+  copyWeeklyPlanButton: document.querySelector("#copyWeeklyPlanButton"),
   syncStatus: document.querySelector("#syncStatus")
 };
 
@@ -134,6 +135,7 @@ document.querySelector("#saveResumeButton").addEventListener("click", saveResume
 els.downloadResumeButton.addEventListener("click", downloadResume);
 els.downloadSqlButton.addEventListener("click", downloadSqlSchema);
 els.downloadPlanButton.addEventListener("click", downloadCareerPlan);
+els.copyWeeklyPlanButton.addEventListener("click", copyWeeklyPlan);
 els.exportButton.addEventListener("click", exportSnapshot);
 els.importButton.addEventListener("click", () => els.importFile.click());
 els.importFile.addEventListener("change", importSnapshot);
@@ -502,7 +504,7 @@ function renderDashboard() {
     </div>
   `).join("");
 
-  els.weeklyPlan.innerHTML = generateWeeklyPlan().map(task => `<li>${escapeHtml(task)}</li>`).join("");
+  els.weeklyPlan.innerHTML = renderWeeklyPlan();
   els.deadlineList.innerHTML = getUpcomingDeadlines().map(item => `
     <div class="timeline-item">
       <strong>${escapeHtml(item.title)}</strong>
@@ -708,6 +710,21 @@ function renderSkillGapCards(gaps, matched) {
   return cards.join("") || emptyState("Your tracked skills cover the current role requirements.");
 }
 
+function renderWeeklyPlan() {
+  const plan = generateWeeklyPlan();
+  return plan.map((item, index) => `
+    <div class="action-card priority-${index + 1}">
+      <div class="action-card-top">
+        <span>Priority ${index + 1}</span>
+        <strong>${escapeHtml(item.time)}</strong>
+      </div>
+      <h4>${escapeHtml(item.action)}</h4>
+      <p>${escapeHtml(item.reason)}</p>
+      <small>${escapeHtml(item.due)}</small>
+    </div>
+  `).join("") || emptyState("Add a target role, applications, skills, projects, and goals to generate a weekly plan.");
+}
+
 function renderSchemaPreview() {
   const tables = [
     ["students", "profile_id, target_role, major, graduation, weekly_hours"],
@@ -782,13 +799,117 @@ function generateCoachCards() {
 function generateWeeklyPlan() {
   const plan = [];
   const overdue = getAllDeadlines().filter(item => daysUntil(item.date) < 0);
-  if (overdue.length) plan.push(`Resolve ${overdue.length} overdue item${overdue.length === 1 ? "" : "s"} or update their dates.`);
-  if (state.applications.length < 10) plan.push("Add three internship applications with posting links and next actions.");
-  if (state.projects.filter(project => project.stage === "Published").length < 3) plan.push("Publish or improve one portfolio project and write a result-focused description.");
-  if (state.networking.length < 5) plan.push("Add two networking contacts and set follow-up dates.");
-  if (state.interviews.length < 2) plan.push("Create one behavioral and one technical interview practice session.");
-  if (state.goals.some(goal => Number(goal.progress || 0) < 50)) plan.push("Advance the lowest-progress goal with one concrete next step.");
-  return plan.slice(0, 5);
+  const upcoming = getUpcomingDeadlines();
+  const fit = calculateSkillFit();
+  const activeApps = state.applications.filter(app => !["Rejected", "Offer"].includes(app.status));
+  const publishedProjects = state.projects.filter(project => project.stage === "Published" || project.stage === "Improving");
+  const lowestGoal = state.goals
+    .filter(goal => Number(goal.progress || 0) < 100)
+    .sort((a, b) => Number(a.progress || 0) - Number(b.progress || 0))[0];
+
+  if (!state.profile.targetRole) {
+    plan.push(actionItem(
+      "Set your target role",
+      "Nexus needs a target role before it can judge skill gaps, project proof, and application quality.",
+      "10 min",
+      "Today"
+    ));
+  }
+
+  if (overdue.length) {
+    plan.push(actionItem(
+      `Resolve ${overdue.length} overdue item${overdue.length === 1 ? "" : "s"}`,
+      "Outdated dates make the dashboard less trustworthy and hide what actually needs attention.",
+      "20 min",
+      "Today"
+    ));
+  }
+
+  if (activeApps.length < 8) {
+    plan.push(actionItem(
+      "Add three internship applications",
+      "A stronger pipeline gives you more chances while your projects and skills keep improving.",
+      "45 min",
+      "This week"
+    ));
+  } else {
+    plan.push(actionItem(
+      "Follow up on two active applications",
+      "Your pipeline is healthy, so the best move is turning applications into conversations.",
+      "30 min",
+      "Next 2 days"
+    ));
+  }
+
+  if (fit.gaps.length) {
+    plan.push(actionItem(
+      `Build proof for ${fit.gaps[0].name}`,
+      fit.gaps[0].action,
+      "60-90 min",
+      "This week"
+    ));
+  }
+
+  if (publishedProjects.length < 3) {
+    plan.push(actionItem(
+      "Publish or polish one portfolio project",
+      "Recruiters need visible proof, not only a list of skills. Add a link, tech stack, and result statement.",
+      "90 min",
+      "This week"
+    ));
+  }
+
+  if (state.networking.length < 5) {
+    plan.push(actionItem(
+      "Add two networking contacts",
+      "A small follow-up system helps you build opportunity before applications go cold.",
+      "25 min",
+      "This week"
+    ));
+  }
+
+  if (state.interviews.length < 2) {
+    plan.push(actionItem(
+      "Create one interview practice session",
+      "Prepare before you need it by practicing one behavioral story and one project walkthrough.",
+      "35 min",
+      "This week"
+    ));
+  }
+
+  if (lowestGoal) {
+    plan.push(actionItem(
+      `Advance goal: ${lowestGoal.goal}`,
+      lowestGoal.nextStep || "Move the lowest-progress goal forward with one specific next step.",
+      "30 min",
+      "Before Friday"
+    ));
+  }
+
+  if (upcoming.length) {
+    plan.push(actionItem(
+      `Prepare for ${upcoming[0].title}`,
+      `${upcoming[0].type} deadline is coming up on ${formatDate(upcoming[0].date)}.`,
+      "30 min",
+      "Before the deadline"
+    ));
+  }
+
+  return dedupePlan(plan).slice(0, 5);
+}
+
+function actionItem(action, reason, time, due) {
+  return { action, reason, time, due };
+}
+
+function dedupePlan(plan) {
+  const seen = new Set();
+  return plan.filter(item => {
+    const key = item.action.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function generateResumeCoach() {
@@ -932,6 +1053,7 @@ CREATE TABLE goals (
 
 function downloadCareerPlan() {
   const fit = calculateSkillFit();
+  const weeklyPlan = generateWeeklyPlan();
   const lines = [
     "Nexus AI Career Plan",
     `Target role: ${state.profile.targetRole || "Not set"}`,
@@ -942,9 +1064,29 @@ function downloadCareerPlan() {
     ...(fit.gaps.length ? fit.gaps.map(item => `- ${item.name}: ${item.action}`) : ["- No major gaps detected."]),
     "",
     "This week's plan:",
-    ...generateWeeklyPlan().map(item => `- ${item}`)
+    ...weeklyPlan.map((item, index) => `${index + 1}. ${item.action} (${item.time}, ${item.due})\n   Why: ${item.reason}`)
   ];
   downloadFile("nexus-ai-career-plan.txt", lines.join("\n"), "text/plain");
+}
+
+async function copyWeeklyPlan() {
+  const weeklyPlan = generateWeeklyPlan();
+  const text = [
+    "Nexus AI Weekly Career Plan",
+    `Target role: ${state.profile.targetRole || "Not set"}`,
+    "",
+    ...weeklyPlan.map((item, index) => `${index + 1}. ${item.action}\n   Time: ${item.time}\n   Due: ${item.due}\n   Why: ${item.reason}`)
+  ].join("\n");
+
+  try {
+    await navigator.clipboard.writeText(text);
+    els.copyWeeklyPlanButton.textContent = "Copied";
+    setTimeout(() => {
+      els.copyWeeklyPlanButton.textContent = "Copy Plan";
+    }, 1400);
+  } catch {
+    downloadFile("nexus-ai-weekly-plan.txt", text, "text/plain");
+  }
 }
 
 function importSnapshot(event) {
