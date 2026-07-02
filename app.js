@@ -1,4 +1,5 @@
 const STORAGE_KEY = "nexus-ai-state-v2";
+const PRODUCTION_API_BASE = "https://nexus-ai-api-upkl.onrender.com";
 const API_BASE = getApiBase();
 
 const starterState = {
@@ -17,6 +18,245 @@ const starterState = {
   goals: [],
   resume: "",
   activity: []
+};
+
+const sampleWorkspace = {
+  profile: {
+    targetRole: "AI Data Analyst Intern",
+    major: "Information Systems",
+    graduation: "2028",
+    weeklyHours: 12
+  },
+  applications: [
+    {
+      id: "sample-app-1",
+      company: "Capital One",
+      role: "Technology Internship Program - Data Analyst",
+      status: "Interview",
+      deadline: "2026-07-18",
+      link: "https://www.capitalonecareers.com/",
+      notes: "Prepare STAR story for Nexus AI backend and CareerLens market analysis."
+    },
+    {
+      id: "sample-app-2",
+      company: "UMBC Career Center",
+      role: "Student Technology Assistant",
+      status: "Applied",
+      deadline: "2026-07-24",
+      link: "https://careers.umbc.edu/",
+      notes: "Follow up with portfolio link and ask about dashboard/reporting work."
+    },
+    {
+      id: "sample-app-3",
+      company: "Handshake",
+      role: "Product Data Intern",
+      status: "Wishlist",
+      deadline: "2026-08-02",
+      link: "https://joinhandshake.com/careers/",
+      notes: "Tailor resume bullets around career workflow data and student UX."
+    },
+    {
+      id: "sample-app-4",
+      company: "DoorDash",
+      role: "AI Research Fellowship",
+      status: "Wishlist",
+      deadline: "2026-08-15",
+      link: "https://careers.doordash.com/",
+      notes: "Draft proposal on AI coaching systems for local commerce learning loops."
+    }
+  ],
+  certifications: [
+    {
+      id: "sample-cert-1",
+      name: "Google Data Analytics Professional Certificate",
+      provider: "Google",
+      progress: 100,
+      target: "2026-06-28",
+      link: "https://www.coursera.org/professional-certificates/google-data-analytics"
+    },
+    {
+      id: "sample-cert-2",
+      name: "Oracle Cloud Infrastructure Foundations Associate",
+      provider: "Oracle",
+      progress: 100,
+      target: "2026-07-01",
+      link: "https://education.oracle.com/"
+    },
+    {
+      id: "sample-cert-3",
+      name: "Power BI Data Analyst Learning Path",
+      provider: "Microsoft Learn",
+      progress: 45,
+      target: "2026-08-10",
+      link: "https://learn.microsoft.com/training/powerplatform/power-bi"
+    }
+  ],
+  projects: [
+    {
+      id: "sample-project-1",
+      name: "Nexus AI",
+      stack: "JavaScript, FastAPI, SQLite, Render, GitHub Pages",
+      stage: "Published",
+      link: "https://jasonbinong.github.io/Nexus-AI/",
+      impact: "Centralized 8 career workflows into one dashboard with live backend sync and readiness scoring."
+    },
+    {
+      id: "sample-project-2",
+      name: "CareerLens AI",
+      stack: "JavaScript, HTML/CSS, labor-market analytics, LLM workflow design",
+      stage: "Published",
+      link: "https://jasonbinong.github.io/CareerLens-AI/",
+      impact: "Turns job-posting patterns into skill, certification, and resume recommendations."
+    },
+    {
+      id: "sample-project-3",
+      name: "LearnWise AI",
+      stack: "JavaScript, decision logic, academic planning dashboard",
+      stage: "Improving",
+      link: "https://github.com/jasonbinong/LearnWise-AI",
+      impact: "Ranks study resources by urgency, weak topics, and expected ROI for UMBC students."
+    },
+    {
+      id: "sample-project-4",
+      name: "15 Weeks at UMBC",
+      stack: "Java, Processing, game design",
+      stage: "Published",
+      link: "https://jasonbinong.github.io/15-Weeks-At-UMBC/",
+      impact: "Built a choice-based campus life game that models health, grades, food, and money tradeoffs."
+    }
+  ],
+  skills: [
+    {
+      id: "sample-skill-1",
+      name: "SQL",
+      category: "Data",
+      level: 72,
+      evidence: "Nexus AI SQLite schema and backend endpoints"
+    },
+    {
+      id: "sample-skill-2",
+      name: "JavaScript",
+      category: "Software",
+      level: 82,
+      evidence: "Nexus AI, CareerLens AI, LearnWise AI frontends"
+    },
+    {
+      id: "sample-skill-3",
+      name: "Data Analysis",
+      category: "Data",
+      level: 78,
+      evidence: "Google Data Analytics certificate and CareerLens AI market analysis"
+    },
+    {
+      id: "sample-skill-4",
+      name: "Generative AI",
+      category: "AI",
+      level: 74,
+      evidence: "Career coaching workflows and AI prompt design across projects"
+    },
+    {
+      id: "sample-skill-5",
+      name: "GitHub",
+      category: "Software",
+      level: 80,
+      evidence: "Public project repos with READMEs, thumbnails, and GitHub Pages deployments"
+    },
+    {
+      id: "sample-skill-6",
+      name: "FastAPI",
+      category: "Software",
+      level: 58,
+      evidence: "Nexus AI backend API deployed on Render"
+    }
+  ],
+  networking: [
+    {
+      id: "sample-network-1",
+      name: "UMBC Career Center Advisor",
+      organization: "UMBC",
+      status: "Follow up",
+      next: "2026-07-09",
+      notes: "Ask for feedback on Nexus AI as a student career tool."
+    },
+    {
+      id: "sample-network-2",
+      name: "LinkedIn UMBC Alumni",
+      organization: "Data Analytics",
+      status: "Messaged",
+      next: "2026-07-12",
+      notes: "Send concise note about Information Systems projects and internship search."
+    },
+    {
+      id: "sample-network-3",
+      name: "MLH Fellowship Reviewer",
+      organization: "Major League Hacking",
+      status: "To contact",
+      next: "2026-07-20",
+      notes: "Prepare code sample explanation for Nexus AI backend and frontend state management."
+    }
+  ],
+  interviews: [
+    {
+      id: "sample-interview-1",
+      role: "AI Data Analyst Intern",
+      company: "Capital One",
+      type: "Behavioral",
+      date: "2026-07-16",
+      notes: "Practice STAR story: built Nexus AI from static app into deployed full-stack product."
+    },
+    {
+      id: "sample-interview-2",
+      role: "Product Data Intern",
+      company: "Handshake",
+      type: "Portfolio review",
+      date: "2026-07-22",
+      notes: "Walk through dashboard problem, data model, user workflow, and next product decisions."
+    }
+  ],
+  goals: [
+    {
+      id: "sample-goal-1",
+      goal: "Ship PostgreSQL-backed Nexus AI prototype",
+      category: "Backend",
+      progress: 35,
+      due: "2026-08-01",
+      nextStep: "Design user table and migrate workspace collections from SQLite."
+    },
+    {
+      id: "sample-goal-2",
+      goal: "Apply to 12 internships or fellowships",
+      category: "Career",
+      progress: 42,
+      due: "2026-08-15",
+      nextStep: "Add five new roles and tailor resume bullets for AI/data analyst keywords."
+    },
+    {
+      id: "sample-goal-3",
+      goal: "Publish one technical case study",
+      category: "Portfolio",
+      progress: 70,
+      due: "2026-07-25",
+      nextStep: "Add screenshots, architecture diagram, and before-after product decisions."
+    }
+  ],
+  resume: "Nexus AI | JavaScript, Python, FastAPI, SQLite, Render, GitHub Pages\n- Built a full-stack student career operating system that tracks applications, certifications, projects, networking, interviews, skills, resume notes, and goals in one workspace.\n- Designed readiness scoring, skill-gap analysis, weekly action planning, and portfolio proof tracking from live workspace data.\n- Deployed a FastAPI + SQLite backend on Render and connected the GitHub Pages frontend through production CORS configuration.",
+  activity: [
+    {
+      id: "sample-activity-1",
+      at: "2026-07-02T19:54:39.000Z",
+      message: "Deployed Nexus AI backend to Render"
+    },
+    {
+      id: "sample-activity-2",
+      at: "2026-07-02T18:30:00.000Z",
+      message: "Added sample recruiter workspace"
+    },
+    {
+      id: "sample-activity-3",
+      at: "2026-07-01T21:15:00.000Z",
+      message: "Updated project links and resume notes"
+    }
+  ]
 };
 
 const schemas = {
@@ -83,6 +323,7 @@ const els = {
   exportButton: document.querySelector("#exportButton"),
   importButton: document.querySelector("#importButton"),
   importFile: document.querySelector("#importFile"),
+  sampleButton: document.querySelector("#sampleButton"),
   clearButton: document.querySelector("#clearButton"),
   profileForm: document.querySelector("#profileForm"),
   careerScore: document.querySelector("#careerScore"),
@@ -139,6 +380,7 @@ els.copyWeeklyPlanButton.addEventListener("click", copyWeeklyPlan);
 els.exportButton.addEventListener("click", exportSnapshot);
 els.importButton.addEventListener("click", () => els.importFile.click());
 els.importFile.addEventListener("change", importSnapshot);
+els.sampleButton.addEventListener("click", loadSampleWorkspace);
 els.clearButton.addEventListener("click", clearWorkspace);
 els.profileForm.addEventListener("submit", saveProfile);
 els.applicationSearch.addEventListener("input", renderApplications);
@@ -172,16 +414,21 @@ function getApiBase() {
   const explicit = params.get("api") || localStorage.getItem("nexus-ai-api-base");
   if (explicit) return explicit.replace(/\/$/, "");
   if (["localhost", "127.0.0.1"].includes(window.location.hostname)) return "http://127.0.0.1:8000";
+  if (window.location.hostname === "jasonbinong.github.io") return PRODUCTION_API_BASE;
   return "";
 }
 
 async function detectBackend() {
   if (!API_BASE) return false;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 2500);
   try {
-    const response = await fetch(`${API_BASE}/health`, { cache: "no-store" });
+    const response = await fetch(`${API_BASE}/health`, { cache: "no-store", signal: controller.signal });
     return response.ok;
   } catch {
     return false;
+  } finally {
+    window.clearTimeout(timeout);
   }
 }
 
@@ -1123,6 +1370,16 @@ async function importSnapshotData(snapshot, filename) {
   } catch (error) {
     showError(error);
   }
+}
+
+async function loadSampleWorkspace() {
+  const confirmed = window.confirm("Load the recruiter sample workspace? This replaces the current workspace.");
+  if (!confirmed) return;
+
+  await importSnapshotData(structuredClone(sampleWorkspace), "recruiter-sample-workspace");
+  currentView = "dashboard";
+  switchView("dashboard");
+  updateSyncStatus(backendOnline ? "Sample loaded to API" : "Sample loaded locally");
 }
 
 function switchView(view) {

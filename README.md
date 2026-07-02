@@ -26,7 +26,9 @@ Nexus AI helps students manage the full career-building process instead of track
 
 - Personalized career readiness dashboard
 - Working FastAPI + SQLite backend in `backend/`
-- Frontend can automatically connect to the backend during local development
+- Frontend automatically connects to the hosted Render backend on GitHub Pages
+- One-click recruiter sample workspace with realistic applications, projects, skills, goals, and resume notes
+- Backend health-check timeout so the app quickly falls back to local mode when an API is unavailable
 - Editable internship application tracker with search and status filtering
 - Certification tracker with progress monitoring
 - Project portfolio tracker with links, tech stacks, and impact notes
