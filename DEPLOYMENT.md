@@ -6,11 +6,23 @@ The public frontend is already deployable through GitHub Pages. The backend can 
 
 ```text
 Frontend: GitHub Pages
-Backend: Render or Railway
+Backend: Render
 Database: SQLite for prototype deployment
 ```
 
 For a production multi-user version, move from SQLite to PostgreSQL and add authentication.
+
+Current live backend:
+
+```text
+https://nexus-ai-api-upkl.onrender.com
+```
+
+Current full-stack frontend:
+
+```text
+https://jasonbinong.github.io/Nexus-AI/?api=https://nexus-ai-api-upkl.onrender.com
+```
 
 ## Deploy Backend On Render
 

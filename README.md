@@ -10,6 +10,14 @@ Project status: active portfolio product and startup exploration.
 
 [Open Nexus AI](https://jasonbinong.github.io/Nexus-AI/)
 
+Full-stack version:
+
+[Open Nexus AI with Render backend](https://jasonbinong.github.io/Nexus-AI/?api=https%3A%2F%2Fnexus-ai-api-upkl.onrender.com)
+
+Backend health check:
+
+[https://nexus-ai-api-upkl.onrender.com/health](https://nexus-ai-api-upkl.onrender.com/health)
+
 ## What It Does
 
 Nexus AI helps students manage the full career-building process instead of tracking everything across scattered notes, spreadsheets, and tabs. It is built around repeatable workflows: apply, follow up, improve skills, prepare for interviews, update projects, and monitor progress over time.
@@ -108,7 +116,7 @@ This project strengthened my understanding of product design, state management, 
 - Move saved workspace data from SQLite into PostgreSQL
 - Add user accounts and role-based access
 - Connect CareerLens AI recommendations directly into the Nexus AI skills plan
-- Deploy the backend with production CORS and environment configuration
+- Harden the hosted backend for production authentication, rate limits, and PostgreSQL persistence
 - Add frontend test coverage
 
 ## How To Run
@@ -154,10 +162,10 @@ When the backend is running, the app shows `API connected` and stores workspace 
 To connect the live GitHub Pages frontend to a deployed backend, open:
 
 ```text
-https://jasonbinong.github.io/Nexus-AI/?api=https://YOUR-BACKEND-URL
+https://jasonbinong.github.io/Nexus-AI/?api=https://nexus-ai-api-upkl.onrender.com
 ```
 
-See [Deployment Guide](DEPLOYMENT.md) for Render and Railway setup.
+See [Deployment Guide](DEPLOYMENT.md) for Render setup.
 
 To verify the SQLite schema before installing API dependencies:
 
