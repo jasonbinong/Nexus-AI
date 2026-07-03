@@ -6,6 +6,10 @@ Nexus AI is a student career operating system for ambitious college students. It
 
 Project status: active portfolio product and startup exploration.
 
+## Demo Walkthrough
+
+![Nexus AI demo walkthrough](assets/nexus-ai-demo.gif)
+
 ## Live Demo
 
 [Open Nexus AI](https://jasonbinong.github.io/Nexus-AI/)
