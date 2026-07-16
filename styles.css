@@ -211,6 +211,19 @@ textarea {
   border-color: rgba(169, 223, 191, 0.48);
 }
 
+.capture-shot .workspace-header {
+  min-height: 280px;
+  padding: 36px 42px;
+}
+
+.capture-shot .header-actions {
+  display: none;
+}
+
+.capture-shot .workspace-header > div:first-child {
+  margin-left: clamp(0px, 8vw, 120px);
+}
+
 .eyebrow {
   margin: 0 0 12px;
   color: #fff;

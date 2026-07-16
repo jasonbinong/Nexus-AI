@@ -418,6 +418,17 @@ const roleRequirements = {
 initApp();
 
 async function initApp() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("capture") === "1") {
+    document.body.classList.add("capture-shot");
+    backendOnline = false;
+    state = normalizeState(structuredClone(sampleWorkspace));
+    updateSyncStatus("Local mode");
+    render();
+    switchView(params.get("view") || "dashboard");
+    return;
+  }
+
   backendOnline = await detectBackend();
   updateSyncStatus();
   if (backendOnline) await refreshFromBackend();
