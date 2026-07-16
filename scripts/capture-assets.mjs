@@ -6,6 +6,10 @@ const root = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "
 const baseUrl = process.env.NEXUS_CAPTURE_URL || "http://127.0.0.1:8070/";
 const outputDir = join(root, "assets");
 const chromePath = process.env.CHROME_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+const viewport = {
+  width: Number(process.env.CAPTURE_WIDTH || 1440),
+  height: Number(process.env.CAPTURE_HEIGHT || 2200)
+};
 
 const captures = [
   ["dashboard", "nexus-dashboard.png"],
@@ -23,7 +27,7 @@ for (const [view, filename] of captures) {
     "--disable-gpu",
     "--hide-scrollbars",
     "--force-device-scale-factor=2",
-    "--window-size=1440,900",
+    `--window-size=${viewport.width},${viewport.height}`,
     `--screenshot=${join(outputDir, filename)}`,
     url
   ], { encoding: "utf8" });
