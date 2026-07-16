@@ -7,6 +7,7 @@ desktop.ini
 .env
 node_modules/
 *.log
+assets/demo-frames/
 backend/nexus.db
 backend/__pycache__/
 backend/.venv/
