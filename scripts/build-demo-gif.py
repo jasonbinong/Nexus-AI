@@ -241,19 +241,19 @@ def case_slide():
     text(draw, (58, 296), "system design, evidence, and roadmap.", MUTED, F_BODY)
 
     draw_window(draw, 502, 112, 724, 540)
-    card(draw, (532, 176, 1188, 310), "Career prep should be trackable", "Problem")
-    text(draw, (560, 248), "Students use disconnected tools for applications,", MUTED, F_SMALL)
-    text(draw, (560, 276), "projects, networking, resume drafts, and goals.", MUTED, F_SMALL)
+    card(draw, (532, 176, 1188, 326), "Career prep should be trackable", "Problem")
+    text(draw, (560, 260), "Students use disconnected tools for applications,", MUTED, F_SMALL)
+    text(draw, (560, 288), "projects, networking, resume drafts, and goals.", MUTED, F_SMALL)
 
-    card(draw, (532, 338, 840, 620), "System Design")
+    card(draw, (532, 354, 840, 620), "System Design")
     for i, row in enumerate(["Frontend dashboard", "FastAPI backend", "SQLite workspace", "Coaching logic"]):
-        y = 414 + i * 42
+        y = 428 + i * 40
         rounded(draw, (560, y, 812, y + 30), 8, SOFT)
         text(draw, (576, y + 7), row, INK, F_TINY)
 
-    card(draw, (878, 338, 1188, 620), "Roadmap")
+    card(draw, (878, 354, 1188, 620), "Roadmap")
     for i, row in enumerate(["Authentication", "PostgreSQL", "True AI feedback", "Mentor sharing"]):
-        y = 414 + i * 42
+        y = 428 + i * 40
         rounded(draw, (906, y, 1160, y + 30), 8, SOFT)
         text(draw, (922, y + 7), row, INK, F_TINY)
     return canvas
