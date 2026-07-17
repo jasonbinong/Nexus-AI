@@ -10,177 +10,257 @@ POSTER = ASSETS / "nexus-ai-demo-poster.png"
 
 SIZE = (1280, 720)
 BG = (244, 248, 243)
+PANEL = (255, 255, 252)
 INK = (21, 34, 29)
 MUTED = (91, 111, 101)
+LINE = (214, 226, 218)
 GREEN = (42, 111, 92)
 TEAL = (46, 143, 145)
 GOLD = (184, 132, 44)
 CLAY = (197, 111, 79)
+SOFT = (232, 241, 233)
+DARK = (18, 35, 31)
 
 
-def font(name, size):
+def font(weight, size):
     font_dir = Path("C:/Windows/Fonts")
-    choices = {
-        "regular": ["Inter-Regular.ttf", "arial.ttf", "segoeui.ttf"],
-        "bold": ["Inter-Bold.ttf", "arialbd.ttf", "segoeuib.ttf"],
-        "black": ["arialbd.ttf", "segoeuib.ttf"],
+    candidates = {
+        "regular": ["Inter-Regular.ttf", "segoeui.ttf", "arial.ttf"],
+        "bold": ["Inter-Bold.ttf", "segoeuib.ttf", "arialbd.ttf"],
+        "black": ["Inter-Black.ttf", "arialbd.ttf", "segoeuib.ttf"],
     }
-    for candidate in choices[name]:
-        path = font_dir / candidate
+    for name in candidates[weight]:
+        path = font_dir / name
         if path.exists():
             return ImageFont.truetype(str(path), size)
     return ImageFont.load_default()
 
 
-F_TITLE = font("black", 62)
-F_H1 = font("black", 44)
-F_H2 = font("bold", 28)
-F_BODY = font("regular", 24)
-F_SMALL = font("bold", 16)
-F_TAG = font("bold", 15)
+F_LOGO = font("black", 26)
+F_TITLE = font("black", 56)
+F_H1 = font("black", 42)
+F_H2 = font("bold", 25)
+F_BODY = font("regular", 22)
+F_SMALL = font("bold", 15)
+F_TINY = font("regular", 13)
+F_NUM = font("black", 54)
 
 
 def rounded(draw, box, radius, fill, outline=None, width=1):
     draw.rounded_rectangle(box, radius=radius, fill=fill, outline=outline, width=width)
 
 
-def resize_cover(image, box_size):
-    src_w, src_h = image.size
-    box_w, box_h = box_size
-    scale = max(box_w / src_w, box_h / src_h)
-    new_size = (int(src_w * scale), int(src_h * scale))
-    resized = image.resize(new_size, Image.Resampling.LANCZOS)
-    left = max(0, (new_size[0] - box_w) // 2)
-    top = max(0, (new_size[1] - box_h) // 2)
-    return resized.crop((left, top, left + box_w, top + box_h))
-
-
-def screenshot_panel(source, crop, target_size):
-    image = Image.open(ASSETS / source).convert("RGB").crop(crop)
-    panel = resize_cover(image, target_size)
-    return panel
+def text(draw, xy, value, fill=INK, font_obj=F_BODY):
+    draw.text(xy, value, fill=fill, font=font_obj)
 
 
 def draw_header(draw):
     rounded(draw, (44, 34, 104, 94), 16, GREEN)
-    draw.text((59, 51), "NX", fill=(255, 255, 255), font=F_H2)
-    draw.text((122, 40), "NEXUS AI", fill=INK, font=F_H2)
-    draw.text((122, 72), "Career command center for college students", fill=MUTED, font=F_TAG)
+    text(draw, (59, 50), "NX", (255, 255, 255), F_LOGO)
+    text(draw, (122, 40), "NEXUS AI", INK, F_H2)
+    text(draw, (122, 72), "Career command center for college students", MUTED, F_SMALL)
 
 
-def draw_browser_frame(canvas, image, x, y, w, h):
-    draw = ImageDraw.Draw(canvas)
-    rounded(draw, (x, y, x + w, y + h), 20, (255, 255, 255), (216, 228, 220), 2)
-    draw.rectangle((x, y, x + w, y + 38), fill=(238, 245, 239))
-    for index, color in enumerate([(197, 111, 79), (184, 132, 44), (46, 143, 145)]):
-        draw.ellipse((x + 18 + index * 20, y + 14, x + 30 + index * 20, y + 26), fill=color)
-    screenshot = image.resize((w - 28, h - 54), Image.Resampling.LANCZOS)
-    canvas.paste(screenshot, (x + 14, y + 44))
+def draw_tag(draw, x, y, label, color):
+    w = draw.textbbox((0, 0), label, font=F_SMALL)[2] + 26
+    rounded(draw, (x, y, x + w, y + 32), 16, color)
+    text(draw, (x + 13, y + 8), label, (255, 255, 255), F_SMALL)
+    return x + w + 10
 
 
-def draw_tags(draw, tags, start_x, y):
-    x = start_x
-    for label, color in tags:
-        text_box = draw.textbbox((0, 0), label, font=F_TAG)
-        width = text_box[2] - text_box[0] + 24
-        rounded(draw, (x, y, x + width, y + 34), 17, color)
-        draw.text((x + 12, y + 9), label, fill=(255, 255, 255), font=F_TAG)
-        x += width + 10
+def draw_sidebar(draw, x, y, h):
+    rounded(draw, (x, y, x + 96, y + h), 22, DARK)
+    rounded(draw, (x + 23, y + 24, x + 73, y + 74), 14, GREEN)
+    text(draw, (x + 36, y + 38), "NX", (255, 255, 255), F_SMALL)
+    labels = ["Home", "Apps", "Resume", "Goals", "Case"]
+    for index, label in enumerate(labels):
+        yy = y + 105 + index * 64
+        fill = (230, 244, 232) if index == 0 else (37, 58, 52)
+        rounded(draw, (x + 14, yy, x + 82, yy + 42), 12, fill)
+        text(draw, (x + 27, yy + 13), label[:4], (28, 59, 49) if index == 0 else (183, 204, 195), F_TINY)
 
 
-def slide(title, eyebrow, body, source, crop, tags, accent=GREEN):
+def draw_window(draw, x, y, w, h):
+    rounded(draw, (x, y, x + w, y + h), 24, PANEL, LINE, 2)
+    rounded(draw, (x, y, x + w, y + 44), 24, (238, 245, 239), LINE, 1)
+    draw.rectangle((x, y + 26, x + w, y + 44), fill=(238, 245, 239))
+    for index, color in enumerate([CLAY, GOLD, TEAL]):
+        draw.ellipse((x + 22 + index * 22, y + 16, x + 34 + index * 22, y + 28), fill=color)
+
+
+def progress(draw, x, y, w, pct, color):
+    rounded(draw, (x, y, x + w, y + 10), 5, (225, 232, 228))
+    rounded(draw, (x, y, x + int(w * pct), y + 10), 5, color)
+
+
+def metric_card(draw, x, y, title, value, color):
+    rounded(draw, (x, y, x + 150, y + 92), 14, PANEL, LINE, 1)
+    text(draw, (x + 16, y + 16), title, MUTED, F_TINY)
+    text(draw, (x + 16, y + 42), value, INK, F_H2)
+    progress(draw, x + 16, y + 74, 118, 0.72, color)
+
+
+def card(draw, box, title, eyebrow=None):
+    rounded(draw, box, 18, PANEL, LINE, 2)
+    x1, y1, x2, _ = box
+    if eyebrow:
+        text(draw, (x1 + 22, y1 + 18), eyebrow.upper(), GOLD, F_SMALL)
+        text(draw, (x1 + 22, y1 + 42), title, INK, F_H2)
+    else:
+        text(draw, (x1 + 22, y1 + 22), title, INK, F_H2)
+    draw.line((x1 + 22, y1 + 72, x2 - 22, y1 + 72), fill=LINE, width=2)
+
+
+def draw_score_ring(draw, cx, cy, score):
+    draw.ellipse((cx - 64, cy - 64, cx + 64, cy + 64), outline=(219, 230, 222), width=18)
+    draw.arc((cx - 64, cy - 64, cx + 64, cy + 64), -90, 245, fill=GREEN, width=18)
+    text(draw, (cx - 38, cy - 34), score, INK, F_NUM)
+    text(draw, (cx + 28, cy + 8), "/100", MUTED, F_BODY)
+
+
+def shell_slide():
     canvas = Image.new("RGB", SIZE, BG)
     draw = ImageDraw.Draw(canvas)
     draw_header(draw)
 
-    draw.text((56, 150), eyebrow.upper(), fill=accent, font=F_SMALL)
-    draw.text((56, 178), title, fill=INK, font=F_H1)
+    text(draw, (56, 150), "CAREER OPERATING SYSTEM", GOLD, F_SMALL)
+    text(draw, (54, 190), "Nexus AI", INK, F_TITLE)
+    text(draw, (58, 280), "One workspace for applications,", MUTED, F_BODY)
+    text(draw, (58, 316), "projects, networking, resumes,", MUTED, F_BODY)
+    text(draw, (58, 352), "interviews, skills, and goals.", MUTED, F_BODY)
+    x = 58
+    for label, color in [("Applications", GREEN), ("Skills", TEAL), ("Goals", GOLD)]:
+        x = draw_tag(draw, x, 424, label, color)
 
-    y = 250
-    for line in body:
-        draw.text((58, y), line, fill=MUTED, font=F_BODY)
-        y += 36
+    draw_window(draw, 520, 116, 690, 520)
+    draw_sidebar(draw, 546, 176, 390)
+    text(draw, (670, 178), "Career Workspace", INK, F_H1)
+    text(draw, (670, 228), "Everything that matters, connected.", MUTED, F_BODY)
 
-    draw_tags(draw, tags, 58, 392)
-
-    panel = screenshot_panel(source, crop, (706, 520))
-    draw_browser_frame(canvas, panel, 520, 124, 704, 538)
-
-    draw.line((58, 475, 360, 475), fill=accent, width=7)
-    draw.line((58, 498, 290, 498), fill=GOLD, width=7)
-    draw.line((58, 521, 430, 521), fill=TEAL, width=7)
+    nodes = {
+        "You": (890, 382, GREEN),
+        "Apps": (765, 276, TEAL),
+        "Resume": (1015, 276, GOLD),
+        "Network": (765, 492, GREEN),
+        "Goals": (1015, 492, CLAY),
+    }
+    for a, b in [("You", "Apps"), ("You", "Resume"), ("You", "Network"), ("You", "Goals")]:
+        draw.line((nodes[a][0], nodes[a][1], nodes[b][0], nodes[b][1]), fill=(141, 170, 158), width=4)
+    for label, (cx, cy, color) in nodes.items():
+        draw.ellipse((cx - 46, cy - 46, cx + 46, cy + 46), fill=SOFT if label != "You" else color, outline=color, width=4)
+        text(draw, (cx - 27, cy - 11), label, (255, 255, 255) if label == "You" else INK, F_SMALL)
     return canvas
 
 
-def cover_slide():
+def dashboard_slide():
     canvas = Image.new("RGB", SIZE, BG)
     draw = ImageDraw.Draw(canvas)
     draw_header(draw)
+    text(draw, (56, 150), "READINESS DASHBOARD", GREEN, F_SMALL)
+    text(draw, (54, 188), "From tracking to next steps", INK, F_H1)
+    text(draw, (58, 260), "Nexus turns your saved career data", MUTED, F_BODY)
+    text(draw, (58, 296), "into a readiness score and plan.", MUTED, F_BODY)
 
-    draw.text((56, 155), "CAREER OPERATING SYSTEM", fill=GOLD, font=F_SMALL)
-    draw.text((54, 194), "Nexus AI", fill=INK, font=F_TITLE)
-    draw.text((58, 278), "Connect applications, projects,", fill=MUTED, font=F_BODY)
-    draw.text((58, 314), "certifications, networking, and goals.", fill=MUTED, font=F_BODY)
-    draw_tags(draw, [("Deployed backend", GREEN), ("Resume coach", TEAL), ("93/100 readiness", GOLD)], 58, 390)
-
-    panel = screenshot_panel("nexus-dashboard.png", (0, 0, 2880, 2250), (720, 520))
-    draw_browser_frame(canvas, panel, 500, 124, 724, 538)
+    draw_window(draw, 502, 112, 724, 540)
+    card(draw, (532, 174, 1188, 330), "Recruiter-ready system", "Career readiness")
+    draw_score_ring(draw, 1100, 252, "93")
+    text(draw, (560, 246), "Your proof, pipeline, and follow-up system", MUTED, F_BODY)
+    text(draw, (560, 282), "are strong enough for serious outreach.", MUTED, F_BODY)
+    metric_card(draw, 532, 356, "Applications", "4", GREEN)
+    metric_card(draw, 700, 356, "Projects", "4", TEAL)
+    metric_card(draw, 868, 356, "Network", "3", GOLD)
+    metric_card(draw, 1036, 356, "Coverage", "25%", CLAY)
+    card(draw, (532, 474, 852, 628), "AI Coach")
+    for i, item in enumerate(["Pipeline move", "Portfolio proof", "Interview readiness"]):
+        text(draw, (558, 554 + i * 28), item, INK if i == 0 else MUTED, F_SMALL)
+    card(draw, (882, 474, 1188, 628), "Weekly Career Plan")
+    for i, item in enumerate(["Resolve overdue items", "Add applications", "Network outreach"]):
+        text(draw, (908, 554 + i * 28), item, INK if i == 0 else MUTED, F_SMALL)
     return canvas
 
 
-slides = [
-    cover_slide(),
-    slide(
-        "Dashboard",
-        "Readiness signals",
-        ["A single workspace turns scattered", "career prep into weekly priorities."],
-        "nexus-dashboard.png",
-        (0, 450, 2880, 3000),
-        [("AI Coach", GREEN), ("Weekly plan", GOLD), ("Pipeline analytics", TEAL)],
-        GREEN,
-    ),
-    slide(
-        "Resume Coach",
-        "Portfolio proof",
-        ["Resume notes become measurable", "project stories and skill evidence."],
-        "nexus-resume-coach.png",
-        (0, 850, 2880, 3300),
-        [("88/100 strength", GREEN), ("Public proof", TEAL), ("Skill alignment", GOLD)],
-        TEAL,
-    ),
-    slide(
-        "Case Study",
-        "Product thinking",
-        ["The app explains the problem,", "system design, evidence, and roadmap."],
-        "nexus-case-study.png",
-        (0, 450, 2880, 3000),
-        [("Problem", CLAY), ("System design", GREEN), ("Next version", GOLD)],
-        CLAY,
-    ),
-]
+def resume_slide():
+    canvas = Image.new("RGB", SIZE, BG)
+    draw = ImageDraw.Draw(canvas)
+    draw_header(draw)
+    text(draw, (56, 150), "RESUME COACH", TEAL, F_SMALL)
+    text(draw, (54, 188), "Turn work into evidence", INK, F_H1)
+    text(draw, (58, 260), "Draft bullets, check skill alignment,", MUTED, F_BODY)
+    text(draw, (58, 296), "and connect claims to public proof.", MUTED, F_BODY)
+
+    draw_window(draw, 502, 112, 724, 540)
+    card(draw, (532, 176, 842, 620), "Resume Vault")
+    text(draw, (562, 260), "Nexus AI | JavaScript, Python,", INK, F_SMALL)
+    text(draw, (562, 292), "FastAPI, SQLite", INK, F_SMALL)
+    bullets = [
+        "Built a full-stack career OS",
+        "Designed readiness scoring",
+        "Deployed backend on Render",
+    ]
+    for i, bullet in enumerate(bullets):
+        text(draw, (562, 350 + i * 48), f"- {bullet}", MUTED, F_SMALL)
+    rounded(draw, (562, 536, 812, 586), 8, DARK)
+    text(draw, (636, 552), "SAVE NOTES", (255, 255, 255), F_SMALL)
+
+    card(draw, (872, 176, 1188, 620), "Resume Coach")
+    coach = [
+        ("Resume strength", "88/100", GREEN),
+        ("Public proof", "4 project links", TEAL),
+        ("Skill alignment", "AI Data Analyst", GOLD),
+        ("Next edit", "Add metrics", CLAY),
+    ]
+    for i, (label, value, color) in enumerate(coach):
+        y = 260 + i * 76
+        rounded(draw, (902, y, 1158, y + 54), 10, SOFT)
+        draw.rectangle((902, y, 909, y + 54), fill=color)
+        text(draw, (926, y + 9), label, INK, F_SMALL)
+        text(draw, (1062, y + 9), value, MUTED, F_TINY)
+    return canvas
 
 
+def case_slide():
+    canvas = Image.new("RGB", SIZE, BG)
+    draw = ImageDraw.Draw(canvas)
+    draw_header(draw)
+    text(draw, (56, 150), "PRODUCT CASE STUDY", CLAY, F_SMALL)
+    text(draw, (54, 188), "Explain the product", INK, F_H1)
+    text(draw, (58, 260), "The app documents the problem,", MUTED, F_BODY)
+    text(draw, (58, 296), "system design, evidence, and roadmap.", MUTED, F_BODY)
+
+    draw_window(draw, 502, 112, 724, 540)
+    card(draw, (532, 176, 1188, 310), "Career prep should be trackable", "Problem")
+    text(draw, (560, 248), "Students use disconnected tools for applications,", MUTED, F_SMALL)
+    text(draw, (560, 276), "projects, networking, resume drafts, and goals.", MUTED, F_SMALL)
+
+    card(draw, (532, 338, 840, 620), "System Design")
+    for i, row in enumerate(["Frontend dashboard", "FastAPI backend", "SQLite workspace", "Coaching logic"]):
+        y = 414 + i * 42
+        rounded(draw, (560, y, 812, y + 30), 8, SOFT)
+        text(draw, (576, y + 7), row, INK, F_TINY)
+
+    card(draw, (878, 338, 1188, 620), "Roadmap")
+    for i, row in enumerate(["Authentication", "PostgreSQL", "True AI feedback", "Mentor sharing"]):
+        y = 414 + i * 42
+        rounded(draw, (906, y, 1160, y + 30), 8, SOFT)
+        text(draw, (922, y + 7), row, INK, F_TINY)
+    return canvas
+
+
+slides = [shell_slide(), dashboard_slide(), resume_slide(), case_slide()]
 frames = []
 durations = []
-for index, slide_image in enumerate(slides):
-    frames.append(slide_image)
-    durations.append(1500)
 
+for index, slide in enumerate(slides):
+    frames.append(slide)
+    durations.append(1550)
     if index < len(slides) - 1:
         next_slide = slides[index + 1]
         for step in range(1, 7):
-            frames.append(Image.blend(slide_image, next_slide, step / 7))
+            frames.append(Image.blend(slide, next_slide, step / 7))
             durations.append(70)
 
 slides[0].save(POSTER, quality=95)
-frames[0].save(
-    OUT,
-    save_all=True,
-    append_images=frames[1:],
-    duration=durations,
-    loop=0,
-    optimize=True,
-)
+frames[0].save(OUT, save_all=True, append_images=frames[1:], duration=durations, loop=0, optimize=True)
 
 print(f"Wrote {OUT}")
 print(f"Wrote {POSTER}")
