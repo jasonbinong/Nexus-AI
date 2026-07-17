@@ -125,8 +125,8 @@ def draw_score_ring(draw, cx, cy, score):
     radius = 58
     draw.ellipse((cx - radius, cy - radius, cx + radius, cy + radius), outline=(219, 230, 222), width=14)
     draw.arc((cx - radius, cy - radius, cx + radius, cy + radius), -90, 245, fill=GREEN, width=14)
-    centered_text(draw, (cx - 40, cy - 35, cx + 40, cy + 18), score, INK, F_SCORE)
-    centered_text(draw, (cx - 34, cy + 18, cx + 34, cy + 42), "score", MUTED, F_TINY)
+    centered_text(draw, (cx - 40, cy - 39, cx + 40, cy + 10), score, INK, F_SCORE)
+    centered_text(draw, (cx - 34, cy + 12, cx + 34, cy + 34), "score", MUTED, F_TINY)
 
 
 def shell_slide():
