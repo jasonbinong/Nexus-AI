@@ -29,11 +29,14 @@ Nexus AI helps students manage the full career-building process instead of track
 ## Features
 
 - Personalized career readiness dashboard
+- Priority Alerts panel that surfaces overdue items, thin pipelines, deadline windows, missing proof links, and role-fit gaps
+- Recent Activity timeline so the workspace feels like a living career system instead of static storage
 - Working FastAPI + SQLite backend in `backend/`
 - Frontend automatically connects to the hosted Render backend on GitHub Pages
 - One-click recruiter sample workspace with realistic applications, projects, skills, goals, and resume notes
-- Backend health-check timeout so the app quickly falls back to local mode when an API is unavailable
+- Backend health-check timeout and request timeout handling so the app quickly falls back to local mode when an API is unavailable
 - Guided onboarding flow that turns a student's target role, major, timeline, and weekly hours into a first action plan
+- First-time empty workspaces open directly into onboarding
 - Built-in product case study view explaining the problem, system design, evidence, and startup roadmap
 - Rule-based resume feedback with a resume strength score and targeted bullet recommendations
 - Editable internship application tracker with search and status filtering
@@ -44,6 +47,7 @@ Nexus AI helps students manage the full career-building process instead of track
 - Resume notes and resume coaching checklist
 - Semester career goals
 - AI-style coaching generated from live workspace data
+- More specific coaching based on deadlines, skill gaps, project proof gaps, low-progress goals, and target-role alignment
 - Weekly career plan generator with priorities, reasons, time estimates, and due timing
 - Upcoming deadline timeline
 - Pipeline analytics
@@ -53,6 +57,7 @@ Nexus AI helps students manage the full career-building process instead of track
 - Database-ready workspace schema preview
 - Downloadable SQL schema for backend/database planning
 - Backend endpoints for workspace data, readiness analytics, and skill-gap analysis
+- Self-healing SQLite schema initialization for safer cold starts and tests
 - Workspace reset and JSON snapshot import through the API
 - Downloadable career action plan
 - Copyable weekly action plan
@@ -113,8 +118,10 @@ Nexus AI centralizes the student career workflow into one dashboard. It helps us
 ### Key Design Decisions
 
 - Started with a blank user workspace so each student builds their own profile
+- Routed empty workspaces into onboarding so first-time users know what to do first
 - Used localStorage so the app works as a deployable static product on GitHub Pages
 - Added a separate FastAPI backend so the project can evolve into a full-stack product without breaking the static demo
+- Added Priority Alerts and Recent Activity to make the dashboard feel live and action-oriented
 - Added skill-gap analysis so the dashboard does more than store information
 - Included a SQL schema export to show how the product could evolve into a backend/database system
 
@@ -178,6 +185,24 @@ https://jasonbinong.github.io/Nexus-AI/?api=https://nexus-ai-api-upkl.onrender.c
 ```
 
 See [Deployment Guide](DEPLOYMENT.md) for Render setup.
+
+### API Endpoints
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/health` | Verify API status, version, configured origins, and available collections |
+| `GET` | `/snapshot` | Return the full workspace: profile, collections, resume notes, activity, analytics, and skill gaps |
+| `GET` | `/analytics/readiness` | Return readiness score and target-role skill gap analysis |
+| `PUT` | `/profile` | Update target role, major, graduation, and weekly focus hours |
+| `PUT` | `/resume` | Update saved resume notes |
+| `GET` | `/{collection}` | List records for applications, certifications, projects, skills, networking, interviews, or goals |
+| `POST` | `/{collection}` | Create a record in a workspace collection |
+| `PUT` | `/{collection}/{item_id}` | Edit a record in a workspace collection |
+| `DELETE` | `/{collection}/{item_id}` | Delete a record from a workspace collection |
+| `POST` | `/workspace/import` | Import a JSON workspace snapshot |
+| `DELETE` | `/workspace/reset` | Clear the workspace and start fresh |
+
+Supported collections: `applications`, `certifications`, `projects`, `skills`, `networking`, `interviews`, and `goals`.
 
 To verify the SQLite schema before installing API dependencies:
 
