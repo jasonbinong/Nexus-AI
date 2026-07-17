@@ -138,16 +138,17 @@ def shell_slide():
     text(draw, (670, 228), "Everything that matters, connected.", MUTED, F_BODY)
 
     nodes = {
-        "You": (890, 382, GREEN),
-        "Apps": (765, 276, TEAL),
-        "Resume": (1015, 276, GOLD),
-        "Network": (765, 492, GREEN),
-        "Goals": (1015, 492, CLAY),
+        "You": (890, 410, GREEN),
+        "Apps": (765, 330, TEAL),
+        "Resume": (1015, 330, GOLD),
+        "Network": (765, 510, GREEN),
+        "Goals": (1015, 510, CLAY),
     }
     for a, b in [("You", "Apps"), ("You", "Resume"), ("You", "Network"), ("You", "Goals")]:
         draw.line((nodes[a][0], nodes[a][1], nodes[b][0], nodes[b][1]), fill=(141, 170, 158), width=4)
     for label, (cx, cy, color) in nodes.items():
-        draw.ellipse((cx - 46, cy - 46, cx + 46, cy + 46), fill=SOFT if label != "You" else color, outline=color, width=4)
+        radius = 36 if label == "You" else 34
+        draw.ellipse((cx - radius, cy - radius, cx + radius, cy + radius), fill=SOFT if label != "You" else color, outline=color, width=4)
         text(draw, (cx - 27, cy - 11), label, (255, 255, 255) if label == "You" else INK, F_SMALL)
     return canvas
 
