@@ -113,13 +113,12 @@ def metric_card(draw, x, y, title, value, color):
 
 def card(draw, box, title, eyebrow=None):
     rounded(draw, box, 18, PANEL, LINE, 2)
-    x1, y1, x2, _ = box
+    x1, y1, _, _ = box
     if eyebrow:
         text(draw, (x1 + 22, y1 + 18), eyebrow.upper(), GOLD, F_SMALL)
         text(draw, (x1 + 22, y1 + 42), title, INK, F_H2)
     else:
         text(draw, (x1 + 22, y1 + 22), title, INK, F_H2)
-    draw.line((x1 + 22, y1 + 72, x2 - 22, y1 + 72), fill=LINE, width=2)
 
 
 def draw_score_ring(draw, cx, cy, score):
@@ -145,16 +144,15 @@ def shell_slide():
         x = draw_tag(draw, x, 424, label, color)
 
     draw_window(draw, 520, 116, 690, 520)
-    draw_sidebar(draw, 546, 176, 390)
-    text(draw, (650, 178), "Career Workspace", INK, F_H1)
-    text(draw, (650, 228), "Everything that matters, connected.", MUTED, F_BODY)
+    text(draw, (594, 178), "Career Workspace", INK, F_H1)
+    text(draw, (594, 228), "Everything that matters, connected.", MUTED, F_BODY)
 
     nodes = {
-        "You": (892, 414, GREEN),
-        "Apps": (770, 332, TEAL),
-        "Resume": (1014, 332, GOLD),
-        "Network": (770, 512, GREEN),
-        "Goals": (1014, 512, CLAY),
+        "You": (872, 414, GREEN),
+        "Apps": (736, 324, TEAL),
+        "Resume": (1008, 324, GOLD),
+        "Network": (736, 520, GREEN),
+        "Goals": (1008, 520, CLAY),
     }
     for a, b in [("You", "Apps"), ("You", "Resume"), ("You", "Network"), ("You", "Goals")]:
         draw.line((nodes[a][0], nodes[a][1], nodes[b][0], nodes[b][1]), fill=(141, 170, 158), width=4)
@@ -184,12 +182,12 @@ def dashboard_slide():
     metric_card(draw, 700, 356, "Projects", "4", TEAL)
     metric_card(draw, 868, 356, "Network", "3", GOLD)
     metric_card(draw, 1036, 356, "Coverage", "25%", CLAY)
-    card(draw, (532, 474, 852, 628), "AI Coach")
+    card(draw, (532, 462, 852, 634), "AI Coach")
     for i, item in enumerate(["Pipeline move", "Portfolio proof", "Interview readiness"]):
-        text(draw, (558, 554 + i * 28), item, INK if i == 0 else MUTED, F_SMALL)
-    card(draw, (882, 474, 1188, 628), "Weekly Career Plan")
+        text(draw, (558, 532 + i * 32), item, INK if i == 0 else MUTED, F_SMALL)
+    card(draw, (882, 462, 1188, 634), "Weekly Career Plan")
     for i, item in enumerate(["Resolve overdue items", "Add applications", "Network outreach"]):
-        text(draw, (908, 554 + i * 28), item, INK if i == 0 else MUTED, F_SMALL)
+        text(draw, (908, 532 + i * 32), item, INK if i == 0 else MUTED, F_SMALL)
     return canvas
 
 
