@@ -267,7 +267,7 @@ durations = []
 
 for index, slide in enumerate(slides):
     frames.append(slide)
-    durations.append(1550)
+    durations.append(20000)
     if index < len(slides) - 1:
         next_slide = slides[index + 1]
         for step in range(1, 7):
