@@ -44,6 +44,7 @@ F_BODY = font("regular", 22)
 F_SMALL = font("bold", 15)
 F_TINY = font("regular", 13)
 F_NUM = font("black", 54)
+F_SCORE = font("black", 42)
 
 
 def rounded(draw, box, radius, fill, outline=None, width=1):
@@ -52,6 +53,16 @@ def rounded(draw, box, radius, fill, outline=None, width=1):
 
 def text(draw, xy, value, fill=INK, font_obj=F_BODY):
     draw.text(xy, value, fill=fill, font=font_obj)
+
+
+def centered_text(draw, box, value, fill=INK, font_obj=F_BODY):
+    left, top, right, bottom = box
+    bbox = draw.textbbox((0, 0), value, font=font_obj)
+    tw = bbox[2] - bbox[0]
+    th = bbox[3] - bbox[1]
+    x = left + ((right - left) - tw) / 2
+    y = top + ((bottom - top) - th) / 2 - 1
+    draw.text((x, y), value, fill=fill, font=font_obj)
 
 
 def draw_header(draw):
@@ -69,15 +80,15 @@ def draw_tag(draw, x, y, label, color):
 
 
 def draw_sidebar(draw, x, y, h):
-    rounded(draw, (x, y, x + 96, y + h), 22, DARK)
-    rounded(draw, (x + 23, y + 24, x + 73, y + 74), 14, GREEN)
-    text(draw, (x + 36, y + 38), "NX", (255, 255, 255), F_SMALL)
-    labels = ["Home", "Apps", "Resume", "Goals", "Case"]
-    for index, label in enumerate(labels):
-        yy = y + 105 + index * 64
-        fill = (230, 244, 232) if index == 0 else (37, 58, 52)
-        rounded(draw, (x + 14, yy, x + 82, yy + 42), 12, fill)
-        text(draw, (x + 27, yy + 13), label[:4], (28, 59, 49) if index == 0 else (183, 204, 195), F_TINY)
+    rounded(draw, (x, y, x + 66, y + h), 22, DARK)
+    rounded(draw, (x + 13, y + 18, x + 53, y + 58), 12, GREEN)
+    centered_text(draw, (x + 13, y + 18, x + 53, y + 58), "NX", (255, 255, 255), F_TINY)
+    nav_colors = [(230, 244, 232), (48, 74, 67), (48, 74, 67), (48, 74, 67), (48, 74, 67)]
+    for index, fill in enumerate(nav_colors):
+        yy = y + 94 + index * 54
+        rounded(draw, (x + 18, yy, x + 48, yy + 30), 10, fill)
+        if index:
+            draw.ellipse((x + 29, yy + 11, x + 37, yy + 19), fill=(166, 190, 181))
 
 
 def draw_window(draw, x, y, w, h):
@@ -112,10 +123,11 @@ def card(draw, box, title, eyebrow=None):
 
 
 def draw_score_ring(draw, cx, cy, score):
-    draw.ellipse((cx - 64, cy - 64, cx + 64, cy + 64), outline=(219, 230, 222), width=18)
-    draw.arc((cx - 64, cy - 64, cx + 64, cy + 64), -90, 245, fill=GREEN, width=18)
-    text(draw, (cx - 38, cy - 34), score, INK, F_NUM)
-    text(draw, (cx + 28, cy + 8), "/100", MUTED, F_BODY)
+    radius = 58
+    draw.ellipse((cx - radius, cy - radius, cx + radius, cy + radius), outline=(219, 230, 222), width=14)
+    draw.arc((cx - radius, cy - radius, cx + radius, cy + radius), -90, 245, fill=GREEN, width=14)
+    centered_text(draw, (cx - 40, cy - 35, cx + 40, cy + 18), score, INK, F_SCORE)
+    centered_text(draw, (cx - 34, cy + 18, cx + 34, cy + 42), "score", MUTED, F_TINY)
 
 
 def shell_slide():
@@ -134,22 +146,22 @@ def shell_slide():
 
     draw_window(draw, 520, 116, 690, 520)
     draw_sidebar(draw, 546, 176, 390)
-    text(draw, (670, 178), "Career Workspace", INK, F_H1)
-    text(draw, (670, 228), "Everything that matters, connected.", MUTED, F_BODY)
+    text(draw, (650, 178), "Career Workspace", INK, F_H1)
+    text(draw, (650, 228), "Everything that matters, connected.", MUTED, F_BODY)
 
     nodes = {
-        "You": (890, 410, GREEN),
-        "Apps": (765, 330, TEAL),
-        "Resume": (1015, 330, GOLD),
-        "Network": (765, 510, GREEN),
-        "Goals": (1015, 510, CLAY),
+        "You": (892, 414, GREEN),
+        "Apps": (770, 332, TEAL),
+        "Resume": (1014, 332, GOLD),
+        "Network": (770, 512, GREEN),
+        "Goals": (1014, 512, CLAY),
     }
     for a, b in [("You", "Apps"), ("You", "Resume"), ("You", "Network"), ("You", "Goals")]:
         draw.line((nodes[a][0], nodes[a][1], nodes[b][0], nodes[b][1]), fill=(141, 170, 158), width=4)
     for label, (cx, cy, color) in nodes.items():
-        radius = 36 if label == "You" else 34
+        radius = 38 if label == "You" else 32
         draw.ellipse((cx - radius, cy - radius, cx + radius, cy + radius), fill=SOFT if label != "You" else color, outline=color, width=4)
-        text(draw, (cx - 27, cy - 11), label, (255, 255, 255) if label == "You" else INK, F_SMALL)
+        centered_text(draw, (cx - radius, cy - radius, cx + radius, cy + radius), label, (255, 255, 255) if label == "You" else INK, F_TINY if label != "You" else F_SMALL)
     return canvas
 
 
