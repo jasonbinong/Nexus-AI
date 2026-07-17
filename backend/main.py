@@ -17,7 +17,10 @@ DB_PATH = Path(os.getenv("NEXUS_DB_PATH", BASE_DIR / "nexus.db"))
 SCHEMA_PATH = BASE_DIR / "schema.sql"
 ALLOWED_ORIGINS = [
     origin.strip()
-    for origin in os.getenv("NEXUS_ALLOWED_ORIGINS", "http://127.0.0.1:8070,http://localhost:8070").split(",")
+    for origin in os.getenv(
+        "NEXUS_ALLOWED_ORIGINS",
+        "http://127.0.0.1:8070,http://localhost:8070,https://jasonbinong.github.io",
+    ).split(",")
     if origin.strip()
 ]
 
@@ -114,7 +117,16 @@ def connect() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    ensure_schema(conn)
     return conn
+
+
+def ensure_schema(conn: sqlite3.Connection) -> None:
+    has_profile_table = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'profiles'"
+    ).fetchone()
+    if not has_profile_table:
+        conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
 def init_db() -> None:
@@ -262,8 +274,15 @@ def startup() -> None:
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok", "database": str(DB_PATH)}
+def health() -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "service": "nexus-ai-backend",
+        "version": app.version,
+        "database": str(DB_PATH),
+        "collections": sorted(COLLECTION_FIELDS),
+        "allowed_origins": ALLOWED_ORIGINS,
+    }
 
 
 @app.get("/snapshot")

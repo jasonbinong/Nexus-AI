@@ -444,6 +444,8 @@ h3 {
 .card-list,
 .table-list,
 .timeline-list,
+.alert-list,
+.activity-list,
 .analytics-list,
 .skill-gap-list,
 .schema-preview {
@@ -453,6 +455,8 @@ h3 {
 
 .coach-card,
 .action-card,
+.alert-card,
+.activity-item,
 .data-card,
 .table-row,
 .timeline-item,
@@ -472,6 +476,36 @@ h3 {
 
 .action-card {
   border-left: 4px solid var(--gold);
+}
+
+.alert-card {
+  display: grid;
+  gap: 5px;
+  border-left: 4px solid var(--gold);
+}
+
+.alert-card.danger {
+  border-left-color: var(--red);
+}
+
+.alert-card.warning {
+  border-left-color: var(--coral);
+}
+
+.alert-card.info {
+  border-left-color: var(--blue);
+}
+
+.alert-card span,
+.activity-item span {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.activity-item {
+  display: grid;
+  gap: 4px;
+  border-left: 4px solid var(--green);
 }
 
 .action-card.is-done {

@@ -342,6 +342,8 @@ const els = {
   skillCoverage: document.querySelector("#skillCoverage"),
   coachList: document.querySelector("#coachList"),
   weeklyPlan: document.querySelector("#weeklyPlan"),
+  priorityAlerts: document.querySelector("#priorityAlerts"),
+  recentActivity: document.querySelector("#recentActivity"),
   deadlineList: document.querySelector("#deadlineList"),
   analyticsList: document.querySelector("#analyticsList"),
   dashboardSkillGaps: document.querySelector("#dashboardSkillGaps"),
@@ -431,8 +433,22 @@ async function initApp() {
 
   backendOnline = await detectBackend();
   updateSyncStatus();
-  if (backendOnline) await refreshFromBackend();
+  if (backendOnline) {
+    try {
+      await refreshFromBackend();
+    } catch (error) {
+      backendOnline = false;
+      updateSyncStatus("API unavailable - local mode");
+      console.warn("Backend refresh failed; continuing locally.", error);
+    }
+  }
+  if (params.get("view") && document.querySelector(`#${params.get("view")}View`)) {
+    currentView = params.get("view");
+  } else if (isWorkspaceEmpty(state)) {
+    currentView = "onboarding";
+  }
   render();
+  switchView(currentView);
 }
 
 function getApiBase() {
@@ -471,16 +487,26 @@ async function refreshFromBackend() {
 }
 
 async function apiRequest(path, options = {}) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-    ...options
-  });
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(detail || `Request failed: ${response.status}`);
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch(`${API_BASE}${path}`, {
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      signal: controller.signal,
+      ...options
+    });
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(detail || `Request failed: ${response.status}`);
+    }
+    if (response.status === 204) return null;
+    return response.json();
+  } catch (error) {
+    if (error.name === "AbortError") throw new Error("Backend request timed out. Your local workspace is still safe.");
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
   }
-  if (response.status === 204) return null;
-  return response.json();
 }
 
 function toBackendPayload(collection, item) {
@@ -931,6 +957,18 @@ function renderDashboard() {
   `).join("");
 
   els.weeklyPlan.innerHTML = renderWeeklyPlan();
+  els.priorityAlerts.innerHTML = generatePriorityAlerts().map(alert => `
+    <div class="alert-card ${alert.tone}">
+      <strong>${escapeHtml(alert.title)}</strong>
+      <span>${escapeHtml(alert.body)}</span>
+    </div>
+  `).join("") || emptyState("No urgent issues. Keep adding proof and follow-ups.");
+  els.recentActivity.innerHTML = state.activity.slice(0, 6).map(item => `
+    <div class="activity-item">
+      <strong>${escapeHtml(item.message)}</strong>
+      <span>${formatActivityTime(item.at)}</span>
+    </div>
+  `).join("") || emptyState("No activity yet. Add your first application, project, skill, or goal.");
   els.deadlineList.innerHTML = getUpcomingDeadlines().map(item => `
     <div class="timeline-item">
       <strong>${escapeHtml(item.title)}</strong>
@@ -948,6 +986,38 @@ function renderDashboard() {
   const fit = calculateSkillFit();
   els.dashboardSkillGaps.innerHTML = renderSkillGapCards(fit.gaps.slice(0, 5), fit.matched);
   els.schemaPreview.innerHTML = renderSchemaPreview();
+}
+
+function generatePriorityAlerts() {
+  const alerts = [];
+  const overdue = getAllDeadlines().filter(item => daysUntil(item.date) < 0);
+  const nextThree = getAllDeadlines().filter(item => {
+    const days = daysUntil(item.date);
+    return days >= 0 && days <= 3;
+  });
+  const activeApps = state.applications.filter(app => !["Rejected", "Offer"].includes(app.status));
+  const fit = calculateSkillFit();
+  const projectsWithoutLinks = state.projects.filter(project => !project.link);
+
+  if (!state.profile.targetRole) {
+    alerts.push({ tone: "danger", title: "Choose a target role", body: "Nexus needs a role before it can judge skills, projects, and next moves." });
+  }
+  if (overdue.length) {
+    alerts.push({ tone: "danger", title: `${overdue.length} overdue item${overdue.length === 1 ? "" : "s"}`, body: "Update dates or resolve old tasks so the dashboard stays trustworthy." });
+  }
+  if (nextThree.length) {
+    alerts.push({ tone: "warning", title: "Deadline window", body: `${nextThree[0].title} is due ${formatDate(nextThree[0].date)}.` });
+  }
+  if (activeApps.length < 3) {
+    alerts.push({ tone: "warning", title: "Pipeline too thin", body: "Add at least three active roles so the weekly plan has enough opportunity data." });
+  }
+  if (fit.gaps.length) {
+    alerts.push({ tone: "warning", title: `Skill proof gap: ${fit.gaps[0].name}`, body: fit.gaps[0].action });
+  }
+  if (projectsWithoutLinks.length) {
+    alerts.push({ tone: "info", title: "Project proof missing", body: `${projectsWithoutLinks.length} project${projectsWithoutLinks.length === 1 ? "" : "s"} need a GitHub or demo link.` });
+  }
+  return alerts.slice(0, 5);
 }
 
 function renderApplications() {
@@ -1193,18 +1263,26 @@ function generateCoachCards() {
   const publishedProjects = state.projects.filter(project => project.stage === "Published");
   const role = state.profile.targetRole || "your target role";
   const lowCert = state.certifications.find(item => Number(item.progress || 0) < 50);
+  const fit = calculateSkillFit();
+  const nextDeadline = getAllDeadlines().filter(item => daysUntil(item.date) >= 0).sort((a, b) => a.date.localeCompare(b.date))[0];
+  const projectWithoutProof = state.projects.find(project => !project.link || !project.impact);
+  const weakestGoal = state.goals
+    .filter(goal => Number(goal.progress || 0) < 100)
+    .sort((a, b) => Number(a.progress || 0) - Number(b.progress || 0))[0];
 
   cards.push({
     title: "Pipeline move",
     body: !state.profile.targetRole
       ? "Start by saving a target role. The workspace will use that role to judge your pipeline, skills, and project proof."
       : activeApps.length < 8
-      ? `Build a stronger ${role} pipeline by adding at least three specific roles with deadlines and next actions.`
-      : "Your application volume is healthy. Shift energy toward follow-ups, referrals, and interview prep."
+      ? `For ${role}, add three more active roles with deadlines and next actions. Prioritize roles that mention ${fit.gaps[0]?.name || "your strongest project proof"}.`
+      : `Your ${role} pipeline has volume. Move two applications from passive tracking into follow-up, referral, or interview prep.`
   });
   cards.push({
     title: "Portfolio proof",
-    body: publishedProjects.length < 3
+    body: projectWithoutProof
+      ? `${projectWithoutProof.name} needs stronger proof. Add ${!projectWithoutProof.link ? "a public link" : "a measurable impact statement"} so recruiters can verify it quickly.`
+      : publishedProjects.length < 3
       ? "Publish or polish one more project with a live link, GitHub README, screenshots, and a clear result statement."
       : "Your project proof is credible. Add short case-study summaries so recruiters can scan the value faster."
   });
@@ -1212,13 +1290,23 @@ function generateCoachCards() {
     title: "Interview readiness",
     body: interviews.length
       ? `You have ${interviews.length} interview-stage item${interviews.length === 1 ? "" : "s"}. Practice one STAR story and one technical project walkthrough.`
+      : nextDeadline
+      ? `No interview-stage applications yet. Before ${formatDate(nextDeadline.date)}, prepare one project story tied to ${nextDeadline.title}.`
       : "No interview-stage applications yet. Prepare anyway by linking each resume bullet to a project story."
   });
   cards.push({
     title: "Learning focus",
-    body: lowCert
+    body: fit.gaps.length
+      ? `Your biggest role-fit gap is ${fit.gaps[0].name}. ${fit.gaps[0].action}`
+      : lowCert
       ? `${lowCert.name} is at ${lowCert.progress}%. Schedule focused study blocks before ${formatDate(lowCert.target)}.`
       : "Your certification pipeline is either complete or empty. Keep only credentials that match your target role."
+  });
+  cards.push({
+    title: "Goal execution",
+    body: weakestGoal
+      ? `Lowest-progress goal: ${weakestGoal.goal}. Next move: ${weakestGoal.nextStep || "define one concrete next step and due date."}`
+      : "Add one semester goal so Nexus can connect your weekly plan to a measurable outcome."
   });
 
   return cards;
@@ -1632,6 +1720,15 @@ function addActivity(message) {
   state.activity = [{ id: createId(), at: new Date().toISOString(), message }, ...(state.activity || [])].slice(0, 50);
 }
 
+function isWorkspaceEmpty(workspace) {
+  return !workspace.profile.targetRole &&
+    !workspace.applications.length &&
+    !workspace.projects.length &&
+    !workspace.skills.length &&
+    !workspace.goals.length &&
+    !workspace.resume.trim();
+}
+
 function displayName(collection, item) {
   if (collection === "applications") return `${item.company} ${item.role}`;
   if (collection === "certifications") return item.name;
@@ -1686,6 +1783,18 @@ function formatDate(value) {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+function formatActivityTime(value) {
+  if (!value) return "Just now";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Recently";
+  const minutes = Math.round((Date.now() - date.getTime()) / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hr ago`;
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 function clamp(value, min, max) {
   if (Number.isNaN(value)) return min;
   return Math.min(Math.max(value, min), max);
@@ -1707,5 +1816,5 @@ function escapeAttribute(value) {
 function showError(error) {
   console.error(error);
   updateSyncStatus("Action failed");
-  window.alert("Nexus AI could not complete that action. Check that the backend is running, then try again.");
+  window.alert(`Nexus AI could not complete that action. ${error.message || "Check that the backend is running, then try again."}`);
 }
