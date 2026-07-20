@@ -2,152 +2,99 @@
 
 ![Nexus AI thumbnail](thumbnail.png)
 
-Nexus AI is a student career operating system for ambitious college students. It brings applications, certifications, projects, networking, interview preparation, resume notes, goals, and coaching into one organized dashboard.
+Nexus AI is a student career operating system for ambitious college students. It brings applications, certifications, projects, networking, interview preparation, resume notes, goals, skill gaps, and coaching into one organized workspace.
 
-Project status: active portfolio product and startup exploration.
+## Quick Links
+
+- [Live App](https://jasonbinong.github.io/Nexus-AI/)
+- [Live App With Render Backend](https://jasonbinong.github.io/Nexus-AI/?api=https%3A%2F%2Fnexus-ai-api-upkl.onrender.com)
+- [Backend Health Check](https://nexus-ai-api-upkl.onrender.com/health)
+- [Portfolio Case Study](https://jasonbinong.github.io/nexus-case-study.html)
+- [Jason Binong Portfolio](https://jasonbinong.github.io/)
+
+## Project Snapshot
+
+| Area | Details |
+| --- | --- |
+| Status | Flagship portfolio product and startup exploration |
+| Focus | Career tracking, readiness scoring, student productivity, backend persistence |
+| Users | College students preparing for internships and early-career opportunities |
+| Frontend | HTML, CSS, JavaScript, localStorage |
+| Backend | Python, FastAPI, SQLite, Render |
+| Deployment | GitHub Pages frontend, Render backend |
 
 ## Demo Walkthrough
 
 ![Nexus AI demo walkthrough](assets/nexus-ai-demo.gif)
 
-## Live Demo
-
-[Open Nexus AI](https://jasonbinong.github.io/Nexus-AI/)
-
-Full-stack version:
-
-[Open Nexus AI with Render backend](https://jasonbinong.github.io/Nexus-AI/?api=https%3A%2F%2Fnexus-ai-api-upkl.onrender.com)
-
-Backend health check:
-
-[https://nexus-ai-api-upkl.onrender.com/health](https://nexus-ai-api-upkl.onrender.com/health)
-
 ## What It Does
 
-Nexus AI helps students manage the full career-building process instead of tracking everything across scattered notes, spreadsheets, and tabs. It is built around repeatable workflows: apply, follow up, improve skills, prepare for interviews, update projects, and monitor progress over time.
+Nexus AI helps students manage the full career-building process instead of tracking everything across notes, spreadsheets, job boards, resumes, and calendar reminders. It gives students one place to manage applications, projects, contacts, interviews, certifications, goals, resume notes, and career-readiness signals.
 
-## Features
+## Key Features
 
 - Personalized career readiness dashboard
-- Account-style profile fields for student name, email, target role, major, graduation timeline, and weekly focus hours
-- Priority Alerts panel that surfaces overdue items, thin pipelines, deadline windows, missing proof links, and role-fit gaps
-- Recent Activity timeline so the workspace feels like a living career system instead of static storage
-- Working FastAPI + SQLite backend in `backend/`
-- Frontend automatically connects to the hosted Render backend on GitHub Pages
-- One-click recruiter sample workspace with realistic applications, projects, skills, goals, and resume notes
-- Backend health-check timeout and request timeout handling so the app quickly falls back to local mode when an API is unavailable
-- Guided onboarding flow that turns a student's target role, major, timeline, and weekly hours into a first action plan
-- First-time empty workspaces open directly into onboarding
-- Built-in product case study view explaining the problem, system design, evidence, and startup roadmap
-- Rule-based resume feedback with a resume strength score and targeted bullet recommendations
-- Editable internship application tracker with search and status filtering
-- Certification tracker with progress monitoring
-- Project portfolio tracker with links, tech stacks, and impact notes
-- Networking CRM with follow-up dates and context notes
-- Interview prep tracker with role-specific practice prompts
-- Resume notes and resume coaching checklist
-- Semester career goals
-- AI-style coaching generated from live workspace data
-- More specific coaching based on deadlines, skill gaps, project proof gaps, low-progress goals, and target-role alignment
+- Blank workspace and guided onboarding for first-time users
+- Account-style profile fields for target role, major, timeline, and weekly focus hours
+- Internship application tracker with search and status filtering
+- Certification, project, networking, interview, goal, and resume note trackers
+- Priority Alerts for overdue items, thin pipelines, deadline windows, missing proof links, and role-fit gaps
+- Recent Activity timeline to make the workspace feel active
+- Career readiness scoring and target-role skill gap analysis
+- AI-style coaching generated from workspace data
 - Weekly career plan generator with priorities, reasons, time estimates, and due timing
-- Upcoming deadline timeline
-- Pipeline analytics
-- Career profile setup
-- Skill inventory with proof-backed confidence scoring
-- Target-role skill gap analysis
-- Database-ready workspace schema preview
-- Downloadable SQL schema for backend/database planning
-- Backend endpoints for workspace data, readiness analytics, skill-gap analysis, and structured career reports
-- Self-healing SQLite schema initialization for safer cold starts and tests
-- Workspace reset and JSON snapshot import through the API
-- Downloadable career action plan
-- Copyable weekly action plan
-- Local browser persistence with localStorage
-- Importable and exportable JSON snapshots
-- Downloadable resume notes
-- Blank workspace reset
+- Downloadable career action plan and resume notes
+- JSON import/export for workspace snapshots
+- FastAPI + SQLite backend with CRUD endpoints for core workspace collections
+- Backend-generated workspace report and readiness analytics
+- GitHub Pages frontend with optional Render API connection
 
 ## Tech Stack
 
-- HTML
-- CSS
+- HTML/CSS
 - JavaScript
 - Browser localStorage
 - Python
 - FastAPI
 - SQLite
+- Render
+- GitHub Pages
 
-## What This Project Shows
+## What Reviewers Should Notice
 
-- Product thinking for student productivity and career management
-- Dashboard UX design for repeated daily use
-- Local data persistence and import/export workflows
-- Backend API design for career-workspace data
-- Relational database modeling with SQLite
-- Auth and PostgreSQL upgrade planning for multi-user persistence
-- Full-stack integration between a JavaScript dashboard and FastAPI service
-- Skill gap analysis tied to target roles
-- Prioritized action planning from applications, projects, skills, goals, and deadlines
-- Database schema planning for a future backend
-- Systems analysis across applications, skills, networking, and goals
-
-## Portfolio Materials
-
-- [Demo script](DEMO_SCRIPT.md)
-- [Roadmap](ROADMAP.md)
-- [Ready-to-create GitHub issues](GITHUB_ISSUES.md)
-- [LinkedIn post draft](LINKEDIN_POST.md)
-- [Architecture](ARCHITECTURE.md)
-- [Deployment guide](DEPLOYMENT.md)
-- [Auth and PostgreSQL upgrade plan](AUTH_POSTGRESQL_PLAN.md)
-- [Demo video script](DEMO_VIDEO_SCRIPT.md)
-- [Security policy](SECURITY.md)
-- [Privacy notes](PRIVACY.md)
-- [Contribution guide](CONTRIBUTING.md)
-- [Changelog](CHANGELOG.md)
-
-## Case Study
-
-### Problem
-
-College students often manage career preparation across disconnected tools: job boards, notes apps, spreadsheets, resumes, project folders, and calendar reminders. This makes it difficult to see whether they are actually becoming more internship-ready over time.
-
-### Solution
-
-Nexus AI centralizes the student career workflow into one dashboard. It helps users track applications, certifications, projects, networking, interviews, resume notes, goals, and skills while generating career-readiness signals from the workspace data.
-
-### Key Design Decisions
-
-- Started with a blank user workspace so each student builds their own profile
-- Routed empty workspaces into onboarding so first-time users know what to do first
-- Used localStorage so the app works as a deployable static product on GitHub Pages
-- Added a separate FastAPI backend so the project can evolve into a full-stack product without breaking the static demo
-- Added Priority Alerts and Recent Activity to make the dashboard feel live and action-oriented
-- Added skill-gap analysis so the dashboard does more than store information
-- Included a SQL schema export to show how the product could evolve into a backend/database system
-
-### What I Learned
-
-This project strengthened my understanding of product design, state management, user workflows, and systems analysis. It also helped me think about how career preparation can be modeled as connected data instead of isolated tasks.
-
-### Future Improvements
-
-- Implement Clerk authentication using the documented auth plan
-- Move saved workspace data from SQLite into PostgreSQL using `backend/postgres_schema.sql`
-- Add user accounts and role-based access controls
-- Connect CareerLens AI recommendations directly into the Nexus AI skills plan
-- Harden the hosted backend for production authentication, rate limits, and PostgreSQL persistence
-- Add frontend test coverage
-
-## How To Run
-
-Open `index.html` in a browser.
-
-No installation is required.
+- Full-stack product direction with a working frontend and backend
+- CRUD API design for career-workspace collections
+- Relational data modeling with SQLite
+- Clear product thinking around student career workflows
+- Readiness analytics tied to applications, skills, projects, goals, networking, and deadlines
+- Startup-ready roadmap toward authentication, PostgreSQL, and AI coaching
 
 ## Backend API
 
-The backend is optional for the GitHub Pages demo, but it is included for the full-stack version of the project.
+The backend is optional for the static GitHub Pages app, but it powers the full-stack version.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Verify API status, version, configured origins, and available collections |
+| `GET` | `/snapshot` | Return the full workspace |
+| `GET` | `/analytics/readiness` | Return readiness score and target-role skill gap analysis |
+| `GET` | `/workspace/report` | Return backend-generated summary, alerts, weekly actions, readiness, and skill gaps |
+| `PUT` | `/profile` | Update profile data |
+| `PUT` | `/resume` | Update saved resume notes |
+| `GET` | `/{collection}` | List records in a workspace collection |
+| `POST` | `/{collection}` | Create a record |
+| `PUT` | `/{collection}/{item_id}` | Edit a record |
+| `DELETE` | `/{collection}/{item_id}` | Delete a record |
+| `POST` | `/workspace/import` | Import a JSON workspace snapshot |
+| `DELETE` | `/workspace/reset` | Clear the workspace |
+
+Supported collections: `applications`, `certifications`, `projects`, `skills`, `networking`, `interviews`, and `goals`.
+
+## How To Run
+
+Open `index.html` in a browser for the static app.
+
+To run the backend:
 
 ```bash
 cd backend
@@ -177,44 +124,38 @@ Then open:
 http://127.0.0.1:8070/
 ```
 
-When the backend is running, the app shows `API connected` and stores workspace data in SQLite. On GitHub Pages, it safely falls back to browser localStorage.
+## Tests And Checks
 
-To connect the live GitHub Pages frontend to a deployed backend, open:
-
-```text
-https://jasonbinong.github.io/Nexus-AI/?api=https://nexus-ai-api-upkl.onrender.com
-```
-
-See [Deployment Guide](DEPLOYMENT.md) for Render setup.
-
-### API Endpoints
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| `GET` | `/health` | Verify API status, version, configured origins, and available collections |
-| `GET` | `/snapshot` | Return the full workspace: profile, collections, resume notes, activity, analytics, and skill gaps |
-| `GET` | `/analytics/readiness` | Return readiness score and target-role skill gap analysis |
-| `GET` | `/workspace/report` | Return backend-generated summary, alerts, weekly actions, readiness, and skill gaps |
-| `PUT` | `/profile` | Update name, email, target role, major, graduation, and weekly focus hours |
-| `PUT` | `/resume` | Update saved resume notes |
-| `GET` | `/{collection}` | List records for applications, certifications, projects, skills, networking, interviews, or goals |
-| `POST` | `/{collection}` | Create a record in a workspace collection |
-| `PUT` | `/{collection}/{item_id}` | Edit a record in a workspace collection |
-| `DELETE` | `/{collection}/{item_id}` | Delete a record from a workspace collection |
-| `POST` | `/workspace/import` | Import a JSON workspace snapshot |
-| `DELETE` | `/workspace/reset` | Clear the workspace and start fresh |
-
-Supported collections: `applications`, `certifications`, `projects`, `skills`, `networking`, `interviews`, and `goals`.
-
-To verify the SQLite schema before installing API dependencies:
+Verify the SQLite schema:
 
 ```bash
 cd backend
 python smoke_test.py
 ```
 
-To test the API contract after installing dependencies:
+Test the API contract after installing dependencies:
 
 ```bash
 pytest test_api_contract.py
 ```
+
+## Portfolio Materials
+
+- [Architecture](ARCHITECTURE.md)
+- [Deployment Guide](DEPLOYMENT.md)
+- [Auth and PostgreSQL Plan](AUTH_POSTGRESQL_PLAN.md)
+- [Roadmap](ROADMAP.md)
+- [Demo Script](DEMO_SCRIPT.md)
+- [Demo Video Script](DEMO_VIDEO_SCRIPT.md)
+- [Resume Entry](RESUME_ENTRY.md)
+- [Security Policy](SECURITY.md)
+- [Privacy Notes](PRIVACY.md)
+
+## Future Improvements
+
+- Add authentication with Clerk or Firebase
+- Move production persistence from SQLite to PostgreSQL
+- Add user accounts and role-based access controls
+- Connect CareerLens recommendations into the Nexus skill plan
+- Add AI-generated resume feedback using a real LLM API
+- Add frontend and backend test coverage
