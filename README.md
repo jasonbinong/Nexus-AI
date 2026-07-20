@@ -29,6 +29,7 @@ Nexus AI helps students manage the full career-building process instead of track
 ## Features
 
 - Personalized career readiness dashboard
+- Account-style profile fields for student name, email, target role, major, graduation timeline, and weekly focus hours
 - Priority Alerts panel that surfaces overdue items, thin pipelines, deadline windows, missing proof links, and role-fit gaps
 - Recent Activity timeline so the workspace feels like a living career system instead of static storage
 - Working FastAPI + SQLite backend in `backend/`
@@ -56,7 +57,7 @@ Nexus AI helps students manage the full career-building process instead of track
 - Target-role skill gap analysis
 - Database-ready workspace schema preview
 - Downloadable SQL schema for backend/database planning
-- Backend endpoints for workspace data, readiness analytics, and skill-gap analysis
+- Backend endpoints for workspace data, readiness analytics, skill-gap analysis, and structured career reports
 - Self-healing SQLite schema initialization for safer cold starts and tests
 - Workspace reset and JSON snapshot import through the API
 - Downloadable career action plan
@@ -193,7 +194,8 @@ See [Deployment Guide](DEPLOYMENT.md) for Render setup.
 | `GET` | `/health` | Verify API status, version, configured origins, and available collections |
 | `GET` | `/snapshot` | Return the full workspace: profile, collections, resume notes, activity, analytics, and skill gaps |
 | `GET` | `/analytics/readiness` | Return readiness score and target-role skill gap analysis |
-| `PUT` | `/profile` | Update target role, major, graduation, and weekly focus hours |
+| `GET` | `/workspace/report` | Return backend-generated summary, alerts, weekly actions, readiness, and skill gaps |
+| `PUT` | `/profile` | Update name, email, target role, major, graduation, and weekly focus hours |
 | `PUT` | `/resume` | Update saved resume notes |
 | `GET` | `/{collection}` | List records for applications, certifications, projects, skills, networking, interviews, or goals |
 | `POST` | `/{collection}` | Create a record in a workspace collection |

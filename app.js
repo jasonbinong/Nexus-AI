@@ -4,6 +4,8 @@ const API_BASE = getApiBase();
 
 const starterState = {
   profile: {
+    displayName: "",
+    email: "",
     targetRole: "",
     major: "",
     graduation: "",
@@ -25,6 +27,8 @@ const starterState = {
 
 const sampleWorkspace = {
   profile: {
+    displayName: "Jason Binong",
+    email: "jbinong1@umbc.edu",
     targetRole: "AI Data Analyst Intern",
     major: "Information Systems",
     graduation: "2028",
@@ -520,6 +524,8 @@ function toBackendPayload(collection, item) {
 function fromBackendSnapshot(snapshot) {
   return {
     profile: {
+      displayName: snapshot.profile?.display_name || "",
+      email: snapshot.profile?.email || "",
       targetRole: snapshot.profile?.target_role || "",
       major: snapshot.profile?.major || "",
       graduation: snapshot.profile?.graduation || "",
@@ -612,6 +618,8 @@ function parseFormData(form, collection) {
 async function saveProfile(event) {
   event.preventDefault();
   const profile = {
+    displayName: els.profileForm.displayName.value.trim(),
+    email: els.profileForm.email.value.trim(),
     targetRole: els.profileForm.targetRole.value.trim(),
     major: els.profileForm.major.value.trim(),
     graduation: els.profileForm.graduation.value.trim(),
@@ -622,6 +630,8 @@ async function saveProfile(event) {
       await apiRequest("/profile", {
         method: "PUT",
         body: JSON.stringify({
+          display_name: profile.displayName,
+          email: profile.email,
           target_role: profile.targetRole,
           major: profile.major,
           graduation: profile.graduation,
@@ -644,6 +654,8 @@ async function saveOnboarding(event) {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
   const profile = {
+    displayName: state.profile.displayName || "",
+    email: state.profile.email || "",
     targetRole: data.get("targetRole").trim(),
     major: data.get("major").trim(),
     graduation: data.get("graduation").trim(),
@@ -658,6 +670,8 @@ async function saveOnboarding(event) {
       await apiRequest("/profile", {
         method: "PUT",
         body: JSON.stringify({
+          display_name: profile.displayName,
+          email: profile.email,
           target_role: profile.targetRole,
           major: profile.major,
           graduation: profile.graduation,
@@ -861,6 +875,8 @@ function render() {
 }
 
 function renderProfile() {
+  els.profileForm.displayName.value = state.profile.displayName || "";
+  els.profileForm.email.value = state.profile.email || "";
   els.profileForm.targetRole.value = state.profile.targetRole || "";
   els.profileForm.major.value = state.profile.major || "";
   els.profileForm.graduation.value = state.profile.graduation || "";

@@ -2,6 +2,8 @@ PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS profiles (
   id INTEGER PRIMARY KEY CHECK (id = 1),
+  display_name TEXT NOT NULL DEFAULT '',
+  email TEXT NOT NULL DEFAULT '',
   target_role TEXT NOT NULL DEFAULT '',
   major TEXT NOT NULL DEFAULT '',
   graduation TEXT NOT NULL DEFAULT '',

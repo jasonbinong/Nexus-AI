@@ -58,6 +58,8 @@ ROLE_REQUIREMENTS = {
 
 
 class Profile(BaseModel):
+    display_name: str = ""
+    email: str = ""
     target_role: str = ""
     major: str = ""
     graduation: str = ""
@@ -127,6 +129,22 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
     ).fetchone()
     if not has_profile_table:
         conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+    else:
+        migrate_profile_columns(conn)
+
+
+def migrate_profile_columns(conn: sqlite3.Connection) -> None:
+    columns = {
+        row["name"]
+        for row in conn.execute("PRAGMA table_info(profiles)").fetchall()
+    }
+    migrations = {
+        "display_name": "ALTER TABLE profiles ADD COLUMN display_name TEXT NOT NULL DEFAULT ''",
+        "email": "ALTER TABLE profiles ADD COLUMN email TEXT NOT NULL DEFAULT ''",
+    }
+    for column, statement in migrations.items():
+        if column not in columns:
+            conn.execute(statement)
 
 
 def init_db() -> None:
@@ -211,9 +229,69 @@ def calculate_skill_gap(snapshot: dict[str, Any]) -> dict[str, Any]:
     return {"target_role": snapshot["profile"].get("target_role", ""), "coverage": coverage, "matched": matched, "gaps": gaps}
 
 
+def build_career_report(snapshot: dict[str, Any]) -> dict[str, Any]:
+    profile = snapshot["profile"]
+    analytics = snapshot["analytics"]
+    skill_gap = snapshot["skill_gap"]
+    applications = snapshot["applications"]
+    projects = snapshot["projects"]
+    networking = snapshot["networking"]
+    goals = snapshot["goals"]
+
+    alerts = []
+    if not profile.get("target_role"):
+        alerts.append("Save a target role so Nexus can judge your workspace against one career direction.")
+    if analytics["active_applications"] < 3:
+        alerts.append("Add at least three active applications to create a useful pipeline.")
+    if len([project for project in projects if project.get("link")]) < 2:
+        alerts.append("Attach GitHub or demo links to at least two projects.")
+    if skill_gap["gaps"]:
+        alerts.append(f"Close the first skill gap: {skill_gap['gaps'][0]}.")
+    if not networking:
+        alerts.append("Add one networking contact and a follow-up date.")
+
+    weekly_actions = [
+        {
+            "action": "Update application pipeline",
+            "why": "A current pipeline improves readiness scoring and deadline alerts.",
+            "measure": f"{analytics['active_applications']} active applications tracked",
+        },
+        {
+            "action": "Add portfolio proof",
+            "why": "Recruiters need evidence that your listed skills show up in shipped work.",
+            "measure": f"{len(projects)} projects tracked",
+        },
+        {
+            "action": "Close one skill gap",
+            "why": f"{profile.get('target_role') or 'Your target role'} still has missing skill evidence.",
+            "measure": ", ".join(skill_gap["gaps"][:3]) or "No major gaps detected",
+        },
+    ]
+    if goals:
+        weekly_actions.append(
+            {
+                "action": "Advance the highest-priority goal",
+                "why": "Goals turn the dashboard from tracking into execution.",
+                "measure": goals[0].get("next_step") or goals[0].get("goal") or "Next step pending",
+            }
+        )
+
+    return {
+        "profile": profile,
+        "readiness": analytics,
+        "skill_gap": skill_gap,
+        "alerts": alerts[:5],
+        "weekly_actions": weekly_actions[:5],
+        "summary": (
+            f"{profile.get('display_name') or 'This student'} is at {analytics['career_score']}/100 career readiness "
+            f"for {profile.get('target_role') or 'a target role'}. Skill coverage is {skill_gap['coverage']}%."
+        ),
+    }
+
+
 def build_snapshot() -> dict[str, Any]:
     with connect() as conn:
-        profile = row_to_dict(conn.execute("SELECT target_role, major, graduation, weekly_hours FROM profiles WHERE id = 1").fetchone())
+        profile = row_to_dict(conn.execute("SELECT display_name, email, target_role, major, graduation, weekly_hours FROM profiles WHERE id = 1").fetchone())
         resume = row_to_dict(conn.execute("SELECT body FROM resume_notes WHERE id = 1").fetchone())
         snapshot = {"profile": profile or {}, "resume": (resume or {}).get("body", "")}
         for collection in COLLECTION_FIELDS:
@@ -235,7 +313,7 @@ def clear_workspace(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
         UPDATE profiles
-        SET target_role = '', major = '', graduation = '', weekly_hours = 0, updated_at = ?
+        SET display_name = '', email = '', target_role = '', major = '', graduation = '', weekly_hours = 0, updated_at = ?
         WHERE id = 1
         """,
         (now(),),
@@ -296,6 +374,11 @@ def readiness() -> dict[str, Any]:
     return {"analytics": snapshot_data["analytics"], "skill_gap": snapshot_data["skill_gap"]}
 
 
+@app.get("/workspace/report")
+def workspace_report() -> dict[str, Any]:
+    return build_career_report(build_snapshot())
+
+
 @app.delete("/workspace/reset", status_code=204)
 def reset_workspace() -> Response:
     with connect() as conn:
@@ -312,10 +395,12 @@ def import_workspace(snapshot_data: dict[str, Any]) -> dict[str, Any]:
         conn.execute(
             """
             UPDATE profiles
-            SET target_role = ?, major = ?, graduation = ?, weekly_hours = ?, updated_at = ?
+            SET display_name = ?, email = ?, target_role = ?, major = ?, graduation = ?, weekly_hours = ?, updated_at = ?
             WHERE id = 1
             """,
             (
+                pick(profile, "display_name", "displayName"),
+                pick(profile, "email"),
                 pick(profile, "target_role", "targetRole"),
                 pick(profile, "major"),
                 pick(profile, "graduation"),
@@ -339,10 +424,10 @@ def update_profile(profile: Profile) -> dict[str, Any]:
         conn.execute(
             """
             UPDATE profiles
-            SET target_role = ?, major = ?, graduation = ?, weekly_hours = ?, updated_at = ?
+            SET display_name = ?, email = ?, target_role = ?, major = ?, graduation = ?, weekly_hours = ?, updated_at = ?
             WHERE id = 1
             """,
-            (profile.target_role, profile.major, profile.graduation, profile.weekly_hours, now()),
+            (profile.display_name, profile.email, profile.target_role, profile.major, profile.graduation, profile.weekly_hours, now()),
         )
         log_activity(conn, "Updated career profile")
     return build_snapshot()["profile"]

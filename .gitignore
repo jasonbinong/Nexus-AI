@@ -11,3 +11,5 @@ assets/demo-frames/
 backend/nexus.db
 backend/__pycache__/
 backend/.venv/
+backend/.pytest_cache/
+backend/pytest-cache-files-*/

@@ -22,6 +22,8 @@ def test_full_workspace_flow():
     profile_response = client.put(
         "/profile",
         json={
+            "display_name": "Jason Binong",
+            "email": "jbinong1@umbc.edu",
             "target_role": "Data Analyst Intern",
             "major": "Information Systems",
             "graduation": "May 2029",
@@ -29,6 +31,7 @@ def test_full_workspace_flow():
         },
     )
     assert profile_response.status_code == 200
+    assert profile_response.json()["display_name"] == "Jason Binong"
     assert profile_response.json()["target_role"] == "Data Analyst Intern"
 
     application_response = client.post(
@@ -66,6 +69,11 @@ def test_full_workspace_flow():
     readiness = client.get("/analytics/readiness")
     assert readiness.status_code == 200
     assert "skill_gap" in readiness.json()
+
+    report = client.get("/workspace/report")
+    assert report.status_code == 200
+    assert report.json()["summary"].startswith("Jason Binong")
+    assert report.json()["weekly_actions"]
 
     reset_response = client.delete("/workspace/reset")
     assert reset_response.status_code == 204
