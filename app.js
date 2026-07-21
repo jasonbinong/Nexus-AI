@@ -1702,10 +1702,10 @@ async function importSnapshotData(snapshot, filename) {
 }
 
 async function loadSampleWorkspace() {
-  const confirmed = window.confirm("Load the recruiter sample workspace? This replaces the current workspace.");
+  const confirmed = window.confirm("Load generic demo data? This replaces the current workspace. New users otherwise start blank.");
   if (!confirmed) return;
 
-  await importSnapshotData(structuredClone(sampleWorkspace), "recruiter-sample-workspace");
+  await importSnapshotData(structuredClone(sampleWorkspace), "generic-demo-workspace");
   currentView = "dashboard";
   switchView("dashboard");
   updateSyncStatus(backendOnline ? "Sample loaded to API" : "Sample loaded locally");

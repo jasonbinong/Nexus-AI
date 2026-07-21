@@ -180,6 +180,18 @@ textarea {
   text-align: center;
 }
 
+.privacy-note {
+  width: fit-content;
+  max-width: min(100%, 620px);
+  margin: 16px auto 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(169, 223, 191, 0.26);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .header-actions {
   position: relative;
   z-index: 1;
