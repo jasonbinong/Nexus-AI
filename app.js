@@ -1,4 +1,4 @@
-const STORAGE_KEY = "nexus-ai-state-v2";
+const STORAGE_KEY = "nexus-ai-state-v3";
 const PRODUCTION_API_BASE = "https://nexus-ai-api-upkl.onrender.com";
 const API_BASE = getApiBase();
 
@@ -27,10 +27,10 @@ const starterState = {
 
 const sampleWorkspace = {
   profile: {
-    displayName: "Jason Binong",
-    email: "jbinong1@umbc.edu",
-    targetRole: "AI Data Analyst Intern",
-    major: "Information Systems",
+    displayName: "Sample Student",
+    email: "student@example.edu",
+    targetRole: "Data Analyst Intern",
+    major: "Business Analytics",
     graduation: "2028",
     weeklyHours: 12
   },
@@ -46,11 +46,11 @@ const sampleWorkspace = {
     },
     {
       id: "sample-app-2",
-      company: "UMBC Career Center",
+      company: "Campus Career Center",
       role: "Student Technology Assistant",
       status: "Applied",
       deadline: "2026-07-24",
-      link: "https://careers.umbc.edu/",
+      link: "",
       notes: "Follow up with portfolio link and ask about dashboard/reporting work."
     },
     {
@@ -109,7 +109,7 @@ const sampleWorkspace = {
     },
     {
       id: "sample-project-2",
-      name: "CareerLens AI",
+      name: "CareerLens",
       stack: "JavaScript, HTML/CSS, labor-market analytics, LLM workflow design",
       stage: "Published",
       link: "https://jasonbinong.github.io/CareerLens-AI/",
@@ -117,11 +117,11 @@ const sampleWorkspace = {
     },
     {
       id: "sample-project-3",
-      name: "LearnWise AI",
+      name: "LearnWise",
       stack: "JavaScript, decision logic, academic planning dashboard",
       stage: "Improving",
-      link: "https://github.com/jasonbinong/LearnWise-AI",
-      impact: "Ranks study resources by urgency, weak topics, and expected ROI for UMBC students."
+      link: "https://example.com/learnwise",
+      impact: "Ranks study resources by urgency, weak topics, and expected ROI for students."
     },
     {
       id: "sample-project-4",
@@ -145,14 +145,14 @@ const sampleWorkspace = {
       name: "JavaScript",
       category: "Software",
       level: 82,
-      evidence: "Nexus AI, CareerLens AI, LearnWise AI frontends"
+      evidence: "Nexus AI, CareerLens, and LearnWise frontends"
     },
     {
       id: "sample-skill-3",
       name: "Data Analysis",
       category: "Data",
       level: 78,
-      evidence: "Google Data Analytics certificate and CareerLens AI market analysis"
+      evidence: "Google Data Analytics certificate and CareerLens market analysis"
     },
     {
       id: "sample-skill-4",
@@ -179,19 +179,19 @@ const sampleWorkspace = {
   networking: [
     {
       id: "sample-network-1",
-      name: "UMBC Career Center Advisor",
-      organization: "UMBC",
+      name: "Campus Career Advisor",
+      organization: "Career Center",
       status: "Follow up",
       next: "2026-07-09",
       notes: "Ask for feedback on Nexus AI as a student career tool."
     },
     {
       id: "sample-network-2",
-      name: "LinkedIn UMBC Alumni",
+      name: "LinkedIn Alumni Contact",
       organization: "Data Analytics",
       status: "Messaged",
       next: "2026-07-12",
-      notes: "Send concise note about Information Systems projects and internship search."
+      notes: "Send concise note about analytics projects and internship search."
     },
     {
       id: "sample-network-3",
@@ -205,7 +205,7 @@ const sampleWorkspace = {
   interviews: [
     {
       id: "sample-interview-1",
-      role: "AI Data Analyst Intern",
+      role: "Data Analyst Intern",
       company: "Capital One",
       type: "Behavioral",
       date: "2026-07-16",

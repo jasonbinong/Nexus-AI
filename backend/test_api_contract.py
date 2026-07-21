@@ -22,16 +22,16 @@ def test_full_workspace_flow():
     profile_response = client.put(
         "/profile",
         json={
-            "display_name": "Jason Binong",
-            "email": "jbinong1@umbc.edu",
+            "display_name": "Sample Student",
+            "email": "student@example.edu",
             "target_role": "Data Analyst Intern",
-            "major": "Information Systems",
-            "graduation": "May 2029",
+            "major": "Business Analytics",
+            "graduation": "May 2028",
             "weekly_hours": 8,
         },
     )
     assert profile_response.status_code == 200
-    assert profile_response.json()["display_name"] == "Jason Binong"
+    assert profile_response.json()["display_name"] == "Sample Student"
     assert profile_response.json()["target_role"] == "Data Analyst Intern"
 
     application_response = client.post(
@@ -72,7 +72,7 @@ def test_full_workspace_flow():
 
     report = client.get("/workspace/report")
     assert report.status_code == 200
-    assert report.json()["summary"].startswith("Jason Binong")
+    assert report.json()["summary"].startswith("Sample Student")
     assert report.json()["weekly_actions"]
 
     reset_response = client.delete("/workspace/reset")

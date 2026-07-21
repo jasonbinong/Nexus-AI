@@ -22,7 +22,7 @@ def main() -> None:
         SET target_role = ?, major = ?, graduation = ?, weekly_hours = ?
         WHERE id = 1
         """,
-        ("Data Analyst Intern", "Information Systems", "May 2029", 8),
+        ("Data Analyst Intern", "Business Analytics", "May 2028", 8),
     )
     conn.execute(
         """
