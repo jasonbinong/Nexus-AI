@@ -16,11 +16,11 @@ Use these README screenshots as your visual anchors:
 
 Open the live site and point out that the app starts blank so each student builds their own workspace.
 
-### 3. Load The Recruiter Sample
+### 3. Load The Demo Data
 
-Click `Load Sample`.
+Click `Load Demo Data`.
 
-"For a quick demo, I added a realistic sample workspace with applications, certifications, projects, skills, networking, interviews, goals, and resume notes."
+"For a quick demo, I added a generic workspace with applications, certifications, projects, skills, networking, interviews, goals, and resume notes."
 
 ### 4. Explain The Dashboard
 

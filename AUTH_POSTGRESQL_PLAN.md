@@ -21,7 +21,7 @@ Turn Nexus AI from a portfolio-grade full-stack demo into a multi-user student c
 5. Add `user_id` to every workspace query.
 6. Migrate the SQLite schema to `backend/postgres_schema.sql`.
 7. Replace shared demo storage with per-user PostgreSQL storage.
-8. Keep the current sample workspace as a recruiter demo mode.
+8. Keep the current sample workspace as an optional demo mode.
 
 ## Privacy Rules
 

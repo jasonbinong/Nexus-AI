@@ -6,7 +6,7 @@
 
 - Built and deployed a full-stack student career operating system that tracks applications, certifications, projects, networking, interviews, skills, resume notes, and goals in one workspace.
 - Developed a FastAPI + SQLite backend with workspace import/export, CRUD endpoints, readiness analytics, and production CORS configuration for a GitHub Pages frontend.
-- Designed onboarding, recruiter sample data, resume scoring, skill-gap analysis, weekly action planning, and a product case study view to make the app usable as a portfolio product.
+- Designed onboarding, optional demo data, resume scoring, skill-gap analysis, weekly action planning, and a product case study view to make the app usable as a portfolio product.
 
 ## Shorter Version
 
@@ -19,5 +19,5 @@
 
 - Problem: students manage career prep across disconnected tools.
 - Architecture: static JavaScript frontend, FastAPI backend, SQLite demo storage, PostgreSQL/auth plan.
-- Product thinking: blank workspace, recruiter sample mode, onboarding, case study, resume coach.
+- Product thinking: blank workspace, optional demo mode, onboarding, case study, resume coach.
 - Next step: Clerk authentication and PostgreSQL for private multi-user workspaces.

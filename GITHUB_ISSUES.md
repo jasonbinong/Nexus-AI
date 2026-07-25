@@ -12,7 +12,7 @@ Copy these into GitHub Issues when you want to show the public roadmap more visi
 - Verify Clerk tokens in FastAPI using the JWKS endpoint
 - Create or fetch a `users` row from the verified auth subject
 - Scope every profile, application, project, skill, goal, resume note, and activity query by `user_id`
-- Keep the public sample workspace available for recruiters
+- Keep the public demo workspace available for visitors
 
 **Acceptance Criteria:**
 - A signed-in student sees only their own workspace.

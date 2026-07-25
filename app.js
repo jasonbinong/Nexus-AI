@@ -259,7 +259,7 @@ const sampleWorkspace = {
     {
       id: "sample-activity-2",
       at: "2026-07-02T18:30:00.000Z",
-      message: "Added sample recruiter workspace"
+      message: "Added optional demo workspace"
     },
     {
       id: "sample-activity-3",

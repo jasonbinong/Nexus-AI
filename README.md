@@ -4,6 +4,20 @@
 
 Nexus AI is a student career operating system for college students preparing for internships, fellowships, and early-career opportunities. It brings applications, certifications, projects, networking, interview prep, resume notes, goals, readiness scoring, and coaching into one organized workspace.
 
+## IBM SkillsBuild AI Builders Challenge
+
+Nexus AI is being prepared as a July 2026 IBM SkillsBuild AI Builders Challenge submission. The challenge version frames Nexus as an AI-assisted career readiness coach for students.
+
+Challenge materials:
+
+- [IBM AI Builders Submission Notes](IBM_AI_BUILDERS_SUBMISSION.md)
+- [IBM Demo Video Script](IBM_DEMO_VIDEO_SCRIPT.md)
+- [IBM Submission Checklist](IBM_SUBMISSION_CHECKLIST.md)
+
+Challenge pitch:
+
+> Nexus AI helps college students turn scattered internship preparation into a trackable career workspace with readiness scoring, skill-gap analysis, priority alerts, and weekly next actions.
+
 ## Live Links
 
 - [Live App](https://jasonbinong.github.io/Nexus-AI/)
@@ -207,4 +221,3 @@ https://nexus-ai-api-upkl.onrender.com/health
 - Add LLM-powered resume feedback and weekly coaching
 - Add frontend unit tests and broader backend coverage
 - Add mentor/peer feedback workflows
-
