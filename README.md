@@ -6,10 +6,13 @@ Nexus AI is a student career operating system for college students preparing for
 
 ## IBM SkillsBuild AI Builders Challenge
 
-Nexus AI is being prepared as a July 2026 IBM SkillsBuild AI Builders Challenge submission. The challenge version frames Nexus as an AI-assisted career readiness coach for students.
+Nexus AI was submitted and published for the July 2026 IBM SkillsBuild AI Builders Challenge. The challenge version frames Nexus as an AI-assisted career readiness coach for students.
 
 Challenge materials:
 
+- [Published Challenge Page](https://aibuilderschallenge-bobhub.bemyapp.com/#/projects/6a640b7cc60ad6cff6085095)
+- [Public Demo Video](https://raw.githubusercontent.com/jasonbinong/Nexus-AI/main/assets/nexus-ai-ibm-demo.webm)
+- [IBM SkillsBuild Credential](https://www.credly.com/badges/148ff22f-6c4f-4d73-bdac-06cd532d004d)
 - [IBM AI Builders Submission Notes](IBM_AI_BUILDERS_SUBMISSION.md)
 - [IBM Demo Video Script](IBM_DEMO_VIDEO_SCRIPT.md)
 - [IBM Submission Checklist](IBM_SUBMISSION_CHECKLIST.md)
