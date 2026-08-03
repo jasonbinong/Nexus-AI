@@ -57,7 +57,7 @@ Expected response:
 {"status":"ok","database":"/tmp/nexus.db"}
 ```
 
-Note: Render free web services do not support persistent disks. The free deployment is suitable for demos, but data can reset when the service restarts. Use a paid persistent disk or PostgreSQL before real student users.
+Note: Render free web services do not support persistent disks. The free deployment is suitable for public preview and testing, but data can reset when the service restarts. Use a paid persistent disk or PostgreSQL before real student users.
 
 ## Connect Frontend To Backend
 

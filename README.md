@@ -15,10 +15,10 @@ Nexus AI was submitted and published for the July 2026 IBM SkillsBuild AI Builde
 Challenge materials:
 
 - [Published Challenge Page](https://aibuilderschallenge-bobhub.bemyapp.com/#/projects/6a640b7cc60ad6cff6085095)
-- [Public Demo Video](https://raw.githubusercontent.com/jasonbinong/Nexus-AI/main/assets/nexus-ai-ibm-demo.webm)
+- [Product Walkthrough Video](https://raw.githubusercontent.com/jasonbinong/Nexus-AI/main/assets/nexus-ai-ibm-walkthrough.webm)
 - [IBM SkillsBuild Credential](https://www.credly.com/badges/148ff22f-6c4f-4d73-bdac-06cd532d004d)
 - [IBM AI Builders Submission Notes](IBM_AI_BUILDERS_SUBMISSION.md)
-- [IBM Demo Video Script](IBM_DEMO_VIDEO_SCRIPT.md)
+- [IBM Walkthrough Video Script](IBM_WALKTHROUGH_VIDEO_SCRIPT.md)
 - [IBM Submission Checklist](IBM_SUBMISSION_CHECKLIST.md)
 
 Challenge pitch:
@@ -42,7 +42,7 @@ Nexus AI turns that scattered workflow into a single dashboard where a student c
 ## What It Does
 
 - Starts every new user with a blank workspace and guided onboarding
-- Lets users optionally load generic demo data for exploration
+- Starts from a clean workspace so students enter their own real career data
 - Tracks applications, certifications, projects, networking, interviews, skills, goals, and resume notes
 - Scores career readiness from workspace activity and proof
 - Compares saved skills against a target role
@@ -57,10 +57,10 @@ Nexus AI should never open with a real person's profile as the default workspace
 
 - New users start with blank profile fields
 - Name, email, major, target role, graduation, and weekly hours are not prefilled
-- Demo data only appears after clicking `Load Demo Data`
+- The public app opens blank so no personal profile, role, email, or application data is prefilled
 - Local mode stores data in the user's browser with `localStorage`
 - Backend mode syncs workspace data only when the Render API is selected or detected
-- The live backend reset endpoint clears the shared demo workspace
+- The live backend reset endpoint clears the shared workspace used for public testing
 
 ## Project Snapshot
 
@@ -73,9 +73,9 @@ Nexus AI should never open with a real person's profile as the default workspace
 | Deployment | GitHub Pages frontend, Render backend |
 | Core Product Value | Career workspace, readiness scoring, and next-step planning |
 
-## Demo Walkthrough
+## Product Walkthrough
 
-![Nexus AI demo walkthrough](assets/nexus-ai-demo.gif)
+![Nexus AI product walkthrough](assets/nexus-ai-product-walkthrough.gif)
 
 ## Feature Modules
 
@@ -213,8 +213,8 @@ https://nexus-ai-api-upkl.onrender.com/health
 - [Deployment Guide](DEPLOYMENT.md)
 - [Auth and PostgreSQL Plan](AUTH_POSTGRESQL_PLAN.md)
 - [Roadmap](ROADMAP.md)
-- [Demo Script](DEMO_SCRIPT.md)
-- [Demo Video Script](DEMO_VIDEO_SCRIPT.md)
+- [Presentation Script](PRODUCT_WALKTHROUGH_SCRIPT.md)
+- [Walkthrough Video Script](PRODUCT_VIDEO_SCRIPT.md)
 - [Resume Entry](RESUME_ENTRY.md)
 - [Security Policy](SECURITY.md)
 - [Privacy Notes](PRIVACY.md)

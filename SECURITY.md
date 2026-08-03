@@ -20,9 +20,9 @@ Nexus AI may store:
 
 Do not store passwords, financial information, government IDs, private health information, or other sensitive personal data in Nexus AI.
 
-## Public Demo Security
+## Public App Security
 
-The GitHub Pages demo stores data in the user's browser through localStorage. Data is not sent to a server in this mode.
+The GitHub Pages app stores data in the user's browser through localStorage. Data is not sent to a server in this mode.
 
 Users can clear browser storage or use the app's reset option to remove local workspace data.
 

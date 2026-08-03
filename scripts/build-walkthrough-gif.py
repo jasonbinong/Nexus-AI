@@ -5,8 +5,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "assets"
-OUT = ASSETS / "nexus-ai-demo.gif"
-POSTER = ASSETS / "nexus-ai-demo-poster.png"
+OUT = ASSETS / "nexus-ai-product-walkthrough.gif"
+POSTER = ASSETS / "nexus-ai-product-walkthrough-poster.png"
 
 SIZE = (1280, 720)
 BG = (244, 248, 243)

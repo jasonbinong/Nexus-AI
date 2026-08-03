@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=grouped-nav-1">
+  <link rel="stylesheet" href="styles.css?v=real-job-import-1">
 </head>
 <body>
   <main class="app-shell">
@@ -78,11 +78,10 @@
           <p class="eyebrow">Career intelligence workspace</p>
           <h2 id="viewTitle">Nexus AI</h2>
           <p class="header-copy">Find roles, track applications, build proof, and turn career prep into a weekly plan.</p>
-          <p class="privacy-note">Blank by default. Demo data is optional.</p>
+          <p class="privacy-note">Blank by default. Import real roles and build your pipeline.</p>
         </div>
         <div class="header-actions">
           <span class="sync-pill" id="syncStatus">Local mode</span>
-          <button class="secondary-button" id="sampleButton" type="button">Load Demo Data</button>
           <button class="secondary-button" id="clearButton" type="button">New Workspace</button>
           <button class="secondary-button" id="importButton" type="button">Import Snapshot</button>
           <button class="primary-button" id="exportButton" type="button">Export Snapshot</button>
@@ -406,7 +405,7 @@
               <option>Published</option>
               <option>Improving</option>
             </select>
-            <input name="link" placeholder="GitHub or demo link">
+            <input name="link" placeholder="GitHub, live site, or project link">
             <input name="impact" placeholder="Impact / result">
             <button class="primary-button" type="submit">Add</button>
           </form>
@@ -563,13 +562,42 @@
         <div class="dashboard-grid">
           <article class="panel">
             <div class="panel-heading">
-              <h3>Job Description Analyzer</h3>
-              <span id="jdScoreLabel">Paste a role</span>
+              <h3>Job Importer</h3>
+              <span id="jdScoreLabel">Import a role</span>
             </div>
-            <textarea id="jobDescriptionInput" placeholder="Paste a job description here. Nexus will extract skills, keywords, resume gaps, and interview topics."></textarea>
+            <div class="form-grid compact-form">
+              <label>
+                Source
+                <select id="jobSourceSelect">
+                  <option value="LinkedIn">LinkedIn</option>
+                  <option value="Intern List">Intern List</option>
+                  <option value="Handshake">Handshake</option>
+                  <option value="Simplify">Simplify</option>
+                  <option value="Company Site">Company Site</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
+              <label>
+                Job URL
+                <input id="jobUrlInput" type="url" placeholder="https://company.com/careers/role">
+              </label>
+              <label>
+                Company
+                <input id="jobCompanyInput" type="text" placeholder="Company name">
+              </label>
+              <label>
+                Role
+                <input id="jobRoleInput" type="text" placeholder="AI intern, data analyst, SWE intern">
+              </label>
+              <label>
+                Deadline
+                <input id="jobDeadlineInput" type="date">
+              </label>
+            </div>
+            <textarea id="jobDescriptionInput" placeholder="Paste the job description. Nexus will extract skills, keywords, resume gaps, and interview topics."></textarea>
             <div class="button-row">
-              <button class="primary-button" id="analyzeJobButton" type="button">Analyze Job</button>
-              <button class="secondary-button" id="saveAnalyzedJobButton" type="button">Save As Application</button>
+              <button class="primary-button" id="analyzeJobButton" type="button">Analyze Job Posting</button>
+              <button class="secondary-button" id="saveAnalyzedJobButton" type="button">Save To Pipeline</button>
             </div>
             <div class="jd-output" id="jobAnalysisOutput"></div>
           </article>
@@ -743,13 +771,13 @@
             <p class="eyebrow">Challenge submission story</p>
             <h3>Why this belongs in the AI Builders Challenge</h3>
             <p>
-              The project demonstrates how AI-assisted decision support can be applied to a practical student problem:
+              The product shows how AI-assisted decision support can be applied to a practical student problem:
               turning messy career preparation data into explainable guidance without hiding the evidence behind each recommendation.
             </p>
           </div>
           <div class="challenge-points">
             <span>Target user: college students seeking internships</span>
-            <span>Core demo: dashboard, coach, weekly plan, backend report</span>
+            <span>Product walkthrough: dashboard, coach, weekly plan, backend report</span>
             <span>Next step: connect IBM Granite or watsonx for generated coaching</span>
           </div>
         </section>
@@ -771,6 +799,6 @@
     </form>
   </dialog>
 
-    <script src="app.js?v=grouped-nav-1"></script>
+    <script src="app.js?v=real-job-import-1"></script>
 </body>
 </html>

@@ -43,7 +43,7 @@ The repo includes deployment files:
 
 See the root `DEPLOYMENT.md` for full instructions.
 
-Render free-tier note: the provided blueprint uses `/tmp/nexus.db` because persistent disks are not available on free web services. This is fine for demo deployment, but use PostgreSQL or a persistent disk before storing real user data.
+Render free-tier note: the provided blueprint uses `/tmp/nexus.db` because persistent disks are not available on free web services. This is fine for public preview and testing, but use PostgreSQL or a persistent disk before storing real user data.
 
 Open the API docs:
 

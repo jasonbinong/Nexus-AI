@@ -15,7 +15,7 @@ Browser UI
         stores workspace data in SQLite
 ```
 
-The public demo stays easy to access through GitHub Pages, while the backend folder shows the path toward a production full-stack product.
+The public app stays easy to access through GitHub Pages, while the backend folder shows the path toward a production full-stack product.
 
 ## Frontend
 
@@ -75,7 +75,7 @@ These entities model career preparation as connected data instead of disconnecte
 
 ### GitHub Pages Mode
 
-When opened from GitHub Pages, Nexus AI uses browser localStorage. This keeps the public demo deployable without a hosted backend.
+When opened from GitHub Pages, Nexus AI uses browser localStorage. This keeps the public app deployable without a hosted backend.
 
 ### API Mode
 
@@ -100,7 +100,7 @@ The next production architecture would be:
 ```text
 Frontend: GitHub Pages, Vercel, or Netlify
 Backend: Render, Railway, or Fly.io
-Database: SQLite demo storage, then PostgreSQL for real users
+Database: SQLite local storage, then PostgreSQL for real users
 Auth: Clerk, Firebase Auth, or FastAPI auth
 AI Layer: Claude/OpenAI API with transparent recommendation explanations
 ```

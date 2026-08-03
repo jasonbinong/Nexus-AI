@@ -2,9 +2,9 @@
 
 Nexus AI is designed around student control of career data.
 
-## Public Demo
+## Public App
 
-The GitHub Pages demo uses browser localStorage. This means workspace data stays in the user's browser and is not transmitted to a hosted Nexus AI server.
+The GitHub Pages app uses browser localStorage. This means workspace data stays in the user's browser and is not transmitted to a hosted Nexus AI server.
 
 ## Local Backend Mode
 

@@ -262,7 +262,7 @@ const sampleWorkspace = {
     {
       id: "sample-activity-2",
       at: "2026-07-02T18:30:00.000Z",
-      message: "Added optional demo workspace"
+      message: "Added optional starter workspace"
     },
     {
       id: "sample-activity-3",
@@ -292,7 +292,7 @@ const schemas = {
     ["name", "Project name", "text"],
     ["stack", "Tech stack", "text"],
     ["stage", "Stage", "select", ["Planning", "Building", "Published", "Improving"]],
-    ["link", "GitHub or demo link", "url"],
+    ["link", "GitHub, live site, or project link", "url"],
     ["impact", "Impact / result", "text"]
   ],
   skills: [
@@ -394,6 +394,11 @@ const els = {
   aiProviderLabel: document.querySelector("#aiProviderLabel"),
   runAiToolButton: document.querySelector("#runAiToolButton"),
   copyAiOutputButton: document.querySelector("#copyAiOutputButton"),
+  jobSourceSelect: document.querySelector("#jobSourceSelect"),
+  jobUrlInput: document.querySelector("#jobUrlInput"),
+  jobCompanyInput: document.querySelector("#jobCompanyInput"),
+  jobRoleInput: document.querySelector("#jobRoleInput"),
+  jobDeadlineInput: document.querySelector("#jobDeadlineInput"),
   jobDescriptionInput: document.querySelector("#jobDescriptionInput"),
   analyzeJobButton: document.querySelector("#analyzeJobButton"),
   saveAnalyzedJobButton: document.querySelector("#saveAnalyzedJobButton"),
@@ -449,7 +454,7 @@ els.copyWeeklyPlanButton.addEventListener("click", copyWeeklyPlan);
 els.exportButton.addEventListener("click", exportSnapshot);
 els.importButton.addEventListener("click", () => els.importFile.click());
 els.importFile.addEventListener("change", importSnapshot);
-els.sampleButton.addEventListener("click", loadSampleWorkspace);
+els.sampleButton?.addEventListener("click", loadSampleWorkspace);
 els.clearButton.addEventListener("click", clearWorkspace);
 els.profileForm.addEventListener("submit", saveProfile);
 els.onboardingForm.addEventListener("submit", saveOnboarding);
@@ -1094,7 +1099,7 @@ function getOnboardingChecklist() {
     },
     {
       title: "Add two public projects",
-      body: "Recruiters need proof. Link GitHub, demos, screenshots, and a result statement.",
+      body: "Recruiters need proof. Link GitHub, live sites, screenshots, and a result statement.",
       time: "20 min",
       done: state.projects.filter(project => project.link).length >= 2
     },
@@ -1659,7 +1664,7 @@ function generatePriorityAlerts() {
     alerts.push({ tone: "warning", title: `Skill proof gap: ${fit.gaps[0].name}`, body: fit.gaps[0].action });
   }
   if (projectsWithoutLinks.length) {
-    alerts.push({ tone: "info", title: "Project proof missing", body: `${projectsWithoutLinks.length} project${projectsWithoutLinks.length === 1 ? "" : "s"} need a GitHub or demo link.` });
+    alerts.push({ tone: "info", title: "Project proof missing", body: `${projectsWithoutLinks.length} project${projectsWithoutLinks.length === 1 ? "" : "s"} need a GitHub, live site, or project link.` });
   }
   return alerts.slice(0, 5);
 }
@@ -1826,7 +1831,7 @@ function renderAiTools() {
   }
   renderChatThread();
   if (!els.jobAnalysisOutput.innerHTML.trim()) {
-    els.jobAnalysisOutput.innerHTML = emptyState("Paste a job description to extract keywords and match your resume.");
+    els.jobAnalysisOutput.innerHTML = emptyState("Import a real posting, then save the analyzed role to your application pipeline.");
   }
 }
 
@@ -1865,20 +1870,30 @@ function cleanSentencePart(value) {
 }
 
 function analyzeJobDescription() {
+  const source = els.jobSourceSelect?.value || "Other";
+  const url = els.jobUrlInput?.value.trim() || "";
+  const companyInput = els.jobCompanyInput?.value.trim() || "";
+  const roleInput = els.jobRoleInput?.value.trim() || "";
+  const deadline = els.jobDeadlineInput?.value || "";
   const text = els.jobDescriptionInput.value.trim();
-  if (!text) {
-    els.jobAnalysisOutput.innerHTML = emptyState("Paste a job description first.");
+  if (!text && !url && !companyInput && !roleInput) {
+    els.jobAnalysisOutput.innerHTML = emptyState("Add a job URL, company, role, or job description first.");
     return;
   }
-  const keywords = extractKeywords(text);
-  const score = scoreResumeAgainstText(text);
-  const roleGuess = inferRoleFromDescription(text);
+  const company = companyInput || inferCompanyFromUrl(url) || "Imported Company";
+  const roleGuess = roleInput || inferRoleFromDescription(text || url);
+  const analysisText = [roleGuess, company, source, url, text].filter(Boolean).join(" ");
+  const keywords = extractKeywords(analysisText);
+  const score = scoreResumeAgainstText(analysisText);
   const interviewTopics = [...new Set([...score.missing.slice(0, 4), ...keywords.slice(0, 3)])].slice(0, 6);
   latestJobAnalysis = {
     id: createId(),
     createdAt: new Date().toISOString(),
+    source,
+    url,
     role: roleGuess,
-    company: "Imported Job",
+    company,
+    deadline,
     text,
     keywords,
     score: score.score,
@@ -1890,9 +1905,10 @@ function analyzeJobDescription() {
   els.jdScoreLabel.textContent = `${score.score}% resume match`;
   els.jobAnalysisOutput.innerHTML = `
     <div class="match-card">
-      <strong>${score.score}% resume-to-role match</strong>
+      <strong>${escapeHtml(company)} - ${escapeHtml(roleGuess)}</strong>
       <div class="progress-track"><div class="progress-fill" style="width:${score.score}%"></div></div>
-      <p>${escapeHtml(score.summary)}</p>
+      <p>${score.score}% resume-to-role match. ${escapeHtml(score.summary)}</p>
+      <p>${escapeHtml(source)}${url ? ` - <a href="${escapeAttribute(url)}" target="_blank" rel="noreferrer">Open posting</a>` : ""}</p>
     </div>
     <div class="analysis-grid">
       <div class="coach-card">
@@ -1913,8 +1929,31 @@ function analyzeJobDescription() {
       </div>
     </div>
   `;
-  addActivity(`Analyzed job description for ${roleGuess}`);
+  addActivity(`Analyzed imported role for ${roleGuess}`);
   saveState();
+}
+
+function inferCompanyFromUrl(url) {
+  if (!url) return "";
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "").toLowerCase();
+    if (host.includes("linkedin")) return "LinkedIn Import";
+    if (host.includes("intern-list")) return "Intern List Import";
+    if (host.includes("joinhandshake")) return "Handshake Import";
+    if (host.includes("simplify")) return "Simplify Import";
+    const name = host.split(".")[0].replace(/[-_]+/g, " ");
+    return toTitleCase(name);
+  } catch {
+    return "";
+  }
+}
+
+function toTitleCase(value) {
+  return String(value || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(word => `${word.charAt(0).toUpperCase()}${word.slice(1)}`)
+    .join(" ");
 }
 
 function inferRoleFromDescription(text) {
@@ -1938,9 +1977,9 @@ function saveAnalyzedJob() {
     company: latestJobAnalysis.company,
     role: latestJobAnalysis.role,
     status: "Saved",
-    deadline: "",
-    link: "",
-    notes: `JD match ${latestJobAnalysis.score}%. Missing proof: ${latestJobAnalysis.missing.slice(0, 4).join(", ") || "none detected"}.`
+    deadline: latestJobAnalysis.deadline || "",
+    link: latestJobAnalysis.url || "",
+    notes: `Source: ${latestJobAnalysis.source || "Imported"}. Match ${latestJobAnalysis.score}%. Missing proof: ${latestJobAnalysis.missing.slice(0, 4).join(", ") || "none detected"}.`
   });
   selectedApplicationId = state.applications[state.applications.length - 1].id;
   addActivity(`Saved analyzed job: ${latestJobAnalysis.role}`);
@@ -2129,7 +2168,7 @@ function generateLocalAiResponse(payload) {
   const toolResponses = {
     resume_review: [
       ["Overall resume direction", `Aim the resume at ${role}. Lead with Nexus AI or your strongest deployed project, then use bullets that show action, tool, and result.`],
-      ["Strongest proof to feature", strongestProject ? `${strongestProject.name}: ${strongestProject.impact || "add a measurable result so the project proves impact."}` : "Add one deployed project with a GitHub/demo link before applying."],
+      ["Strongest proof to feature", strongestProject ? `${strongestProject.name}: ${strongestProject.impact || "add a measurable result so the project proves impact."}` : "Add one deployed project with a GitHub, live site, or project link before applying."],
       ["Fix first", `Add evidence for ${missingSkill}. Recruiters need proof through a project, certification, class artifact, or work example.`],
       ["Bullet formula", "Use: Built/Analyzed/Deployed + tool or method + measurable user/workflow result. Keep each bullet to one clear outcome."]
     ],
@@ -2578,7 +2617,7 @@ function generateResumeCoach() {
       title: "Public proof",
       body: publicProjects.length
         ? `${publicProjects.length} project link${publicProjects.length === 1 ? "" : "s"} are tracked. Make sure the resume names the strongest one.`
-        : "Add GitHub or live demo links to your projects, then reference the best one in your resume notes."
+        : "Add GitHub or live project links to your projects, then reference the best one in your resume notes."
     },
     {
       title: "Skill alignment",
@@ -2796,13 +2835,13 @@ async function importSnapshotData(snapshot, filename) {
 }
 
 async function loadSampleWorkspace() {
-  const confirmed = window.confirm("Load generic demo data? This replaces the current workspace. New users otherwise start blank.");
+  const confirmed = window.confirm("Load the starter workspace? This replaces the current workspace. New users otherwise start blank.");
   if (!confirmed) return;
 
-  await importSnapshotData(structuredClone(sampleWorkspace), "generic-demo-workspace");
+  await importSnapshotData(structuredClone(sampleWorkspace), "starter-workspace");
   currentView = "dashboard";
   switchView("dashboard");
-  updateSyncStatus(backendOnline ? "Sample loaded to API" : "Sample loaded locally");
+  updateSyncStatus(backendOnline ? "Starter workspace loaded to API" : "Starter workspace loaded locally");
 }
 
 function switchView(view) {

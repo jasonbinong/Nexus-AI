@@ -24,7 +24,7 @@ Add user accounts so each student can save a private workspace.
 Acceptance criteria:
 - User can sign up, sign in, and sign out
 - Workspace data belongs to the signed-in user
-- Public demo mode still works without login
+- Public app mode still works without login
 
 ### 2. PostgreSQL Deployment
 

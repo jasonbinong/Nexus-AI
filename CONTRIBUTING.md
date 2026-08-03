@@ -44,7 +44,7 @@ pytest test_api_contract.py
 
 ## Contribution Guidelines
 
-- Keep the GitHub Pages demo usable without a backend
+- Keep the GitHub Pages app usable without a backend
 - Do not commit local databases, secrets, or generated environment files
 - Keep features tied to student career readiness
 - Prefer clear workflows over broad generic AI features

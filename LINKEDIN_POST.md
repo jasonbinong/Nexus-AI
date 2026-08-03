@@ -24,4 +24,4 @@ Next steps: authentication, PostgreSQL deployment, and connecting CareerLens AI 
 
 GitHub: https://github.com/jasonbinong/Nexus-AI
 
-Live demo: https://jasonbinong.github.io/Nexus-AI/
+Live product: https://jasonbinong.github.io/Nexus-AI/

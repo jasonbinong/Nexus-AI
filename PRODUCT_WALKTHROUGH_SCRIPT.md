@@ -1,6 +1,6 @@
-# Nexus AI Demo Script
+# Nexus AI Product Walkthrough Script
 
-Use this for a 60-90 second LinkedIn, portfolio, or application demo.
+Use this for a 60-90 second LinkedIn, portfolio, or application walkthrough.
 
 ## Opening
 

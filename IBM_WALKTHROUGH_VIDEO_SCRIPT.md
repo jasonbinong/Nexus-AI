@@ -1,4 +1,4 @@
-# IBM AI Builders Challenge Demo Video Script
+# IBM AI Builders Challenge Walkthrough Video Script
 
 Target length: 2:45 to 3:00
 
@@ -14,11 +14,11 @@ Students preparing for internships often track everything across different place
 
 Nexus AI brings the full career workflow into one workspace. Students can track applications, certifications, projects, networking, interviews, skills, resume notes, and goals. The app then turns that data into readiness signals, skill gaps, priority alerts, and a weekly career plan.
 
-## 1:15-2:20 - Demo
+## 1:15-2:20 - Product Walkthrough
 
 Start on the dashboard.
 
-This is the first-run workspace. It starts blank so students are not shown someone else's personal data. For the demo, I can load generic demo data.
+This is the first-run workspace. It starts blank so students are not shown someone else's personal data. I can import a real role, analyze the posting, and save it to my application pipeline.
 
 Show:
 
@@ -46,4 +46,3 @@ The frontend is built with HTML, CSS, and JavaScript. The backend uses Python, F
 ## 2:50-3:00 - Impact
 
 Nexus AI helps students feel less overwhelmed by turning scattered career preparation into a clear system of records, readiness signals, and next steps. My goal is to keep improving it into a practical career operating system for students.
-

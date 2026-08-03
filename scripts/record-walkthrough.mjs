@@ -7,7 +7,7 @@ const root = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "
 const baseUrl = process.env.NEXUS_CAPTURE_URL || "http://127.0.0.1:8070/";
 const chromePath = process.env.CHROME_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const port = Number(process.env.CDP_PORT || 9334);
-const frameDir = join(root, "assets", "demo-frames");
+const frameDir = join(root, "assets", "walkthrough-frames");
 const viewport = { width: 1440, height: 900 };
 
 await rm(frameDir, { recursive: true, force: true });
@@ -17,7 +17,7 @@ const chrome = spawn(chromePath, [
   "--headless=new",
   "--disable-gpu",
   `--remote-debugging-port=${port}`,
-  `--user-data-dir=${join(tmpdir(), `nexus-demo-${Date.now()}`)}`,
+  `--user-data-dir=${join(tmpdir(), `nexus-walkthrough-${Date.now()}`)}`,
   `--window-size=${viewport.width},${viewport.height}`,
   "about:blank"
 ], { stdio: "ignore" });
@@ -99,7 +99,7 @@ try {
     deviceScaleFactor: 1,
     mobile: false
   });
-  await send("Page.navigate", { url: `${baseUrl}?capture=1&view=dashboard&v=record-demo` });
+  await send("Page.navigate", { url: `${baseUrl}?capture=1&view=dashboard&v=record-walkthrough` });
   await delay(1300);
 
   await send("Page.startScreencast", {

@@ -2,7 +2,7 @@
 
 ## Goal
 
-Turn Nexus AI from a portfolio-grade full-stack demo into a multi-user student career platform where each student has a private workspace.
+Turn Nexus AI from a portfolio-grade full-stack product into a multi-user student career platform where each student has a private workspace.
 
 ## Recommended Stack
 
@@ -20,8 +20,8 @@ Turn Nexus AI from a portfolio-grade full-stack demo into a multi-user student c
 4. Create or fetch a `users` row from the verified auth subject.
 5. Add `user_id` to every workspace query.
 6. Migrate the SQLite schema to `backend/postgres_schema.sql`.
-7. Replace shared demo storage with per-user PostgreSQL storage.
-8. Keep the current sample workspace as an optional demo mode.
+7. Replace shared local storage with per-user PostgreSQL storage.
+8. Keep the current starter workspace for local development only.
 
 ## Privacy Rules
 

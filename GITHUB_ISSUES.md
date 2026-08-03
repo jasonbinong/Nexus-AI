@@ -12,11 +12,11 @@ Copy these into GitHub Issues when you want to show the public roadmap more visi
 - Verify Clerk tokens in FastAPI using the JWKS endpoint
 - Create or fetch a `users` row from the verified auth subject
 - Scope every profile, application, project, skill, goal, resume note, and activity query by `user_id`
-- Keep the public demo workspace available for visitors
+- Keep the public workspace available for visitors
 
 **Acceptance Criteria:**
 - A signed-in student sees only their own workspace.
-- A signed-out visitor can still explore demo/sample mode.
+- A signed-out visitor can still explore the local app without creating an account.
 - Backend routes reject unauthenticated private workspace requests.
 - README documents required Clerk environment variables.
 
@@ -24,19 +24,19 @@ Copy these into GitHub Issues when you want to show the public roadmap more visi
 
 ## Issue 2: Migrate Workspace Storage From SQLite To PostgreSQL
 
-**Goal:** Upgrade the backend from shared demo SQLite storage to persistent PostgreSQL storage for real users.
+**Goal:** Upgrade the backend from shared SQLite storage to persistent PostgreSQL storage for real users.
 
 **Tasks:**
 - Use `backend/postgres_schema.sql` as the first production schema
 - Add `DATABASE_URL` configuration
-- Add a database adapter layer so SQLite can remain available for local demo mode
+- Add a database adapter layer so SQLite can remain available for local development
 - Convert workspace CRUD queries to parameterized PostgreSQL queries
 - Add setup instructions for Render PostgreSQL or Neon
 - Test snapshot import/export, profile saving, item CRUD, and readiness analytics
 
 **Acceptance Criteria:**
 - PostgreSQL stores separate user workspaces.
-- Existing SQLite smoke test still works for local/demo mode.
+- Existing SQLite smoke test still works for local mode.
 - Render deployment can be configured with `DATABASE_URL`.
 - No workspace query returns another user's data.
 

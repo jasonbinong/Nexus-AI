@@ -23,7 +23,7 @@
 - Workspace reset endpoint
 - Workspace JSON import endpoint
 - API contract test
-- Demo script
+- Product walkthrough script
 - Product roadmap
 - GitHub issue templates
 - LinkedIn post draft

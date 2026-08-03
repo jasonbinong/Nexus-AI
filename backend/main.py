@@ -303,7 +303,7 @@ def build_career_report(snapshot: dict[str, Any]) -> dict[str, Any]:
     if analytics["active_applications"] < 3:
         alerts.append("Add at least three active applications to create a useful pipeline.")
     if len([project for project in projects if project.get("link")]) < 2:
-        alerts.append("Attach GitHub or demo links to at least two projects.")
+        alerts.append("Attach GitHub, live site, or project links to at least two projects.")
     if skill_gap["gaps"]:
         alerts.append(f"Close the first skill gap: {skill_gap['gaps'][0]}.")
     if not networking:
@@ -382,7 +382,7 @@ def fallback_ai_sections(request: AiCoachRequest) -> dict[str, Any]:
         "interview_prep": [
             ("Project story", f"Practice explaining {project_name}: problem, user, architecture, tradeoffs, result, and next improvement."),
             ("Technical practice", f"Prepare for questions about {gap_name}, API design, data validation, testing, and deployment."),
-            ("Behavioral story", "Use a STAR answer about accepting feedback and improving Nexus from a demo into a stronger product."),
+            ("Behavioral story", "Use a STAR answer about accepting feedback and improving Nexus into a stronger product."),
         ],
         "role_fit": [
             ("Match signals", f"Strongest current signals: {', '.join(str(item.get('name', item)) for item in matched[:5]) or 'deployed projects, AI/data experience, and career-product focus'}."),

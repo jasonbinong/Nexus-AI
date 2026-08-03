@@ -75,11 +75,11 @@ This approach keeps the AI accountable: recommendations are tied to visible stud
 - GitHub repository: https://github.com/jasonbinong/Nexus-AI
 - Portfolio case study: https://jasonbinong.github.io/nexus-case-study.html
 
-## Demo Video Requirements
+## Walkthrough Video Requirements
 
 - Publicly accessible video
 - Maximum length: 3 minutes
-- Structure: why, how, demo, impact
+- Structure: why, how, product walkthrough, impact
 
 ## Suggested Project Page Description
 
@@ -87,5 +87,4 @@ Nexus AI is an AI-assisted career readiness workspace for college students prepa
 
 ## Judging Story
 
-Nexus AI is not only a tracker. It demonstrates how AI systems can support practical decision-making by turning user-maintained data into explainable recommendations. The product focuses on student impact, transparency, and usability: every alert and next step is tied to evidence the student can see and update.
-
+Nexus AI is not only a tracker. It shows how AI systems can support practical decision-making by turning user-maintained data into explainable recommendations. The product focuses on student impact, transparency, and usability: every alert and next step is tied to evidence the student can see and update.

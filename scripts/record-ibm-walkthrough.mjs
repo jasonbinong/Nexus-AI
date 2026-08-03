@@ -6,7 +6,7 @@ const require = createRequire("C:/Users/jason/.cache/codex-runtimes/codex-primar
 const { chromium } = require("playwright");
 
 const root = path.resolve(process.cwd());
-const videoDir = path.join(root, "assets", "demo-video");
+const videoDir = path.join(root, "assets", "walkthrough-video");
 await fs.mkdir(videoDir, { recursive: true });
 
 const browser = await chromium.launch({
@@ -55,6 +55,6 @@ if (!latest) {
   throw new Error("No video was recorded.");
 }
 
-const out = path.join(root, "assets", "nexus-ai-ibm-demo.webm");
+const out = path.join(root, "assets", "nexus-ai-ibm-walkthrough.webm");
 await fs.copyFile(latest.full, out);
 console.log(out);

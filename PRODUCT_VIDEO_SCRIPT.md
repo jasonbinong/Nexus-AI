@@ -1,4 +1,4 @@
-# Nexus AI Demo Video Script
+# Nexus AI Product Video Script
 
 ## 45-60 Second Walkthrough
 
@@ -16,11 +16,11 @@ Use these README screenshots as your visual anchors:
 
 Open the live site and point out that the app starts blank so each student builds their own workspace.
 
-### 3. Load The Demo Data
+### 3. Import A Real Role
 
-Click `Load Demo Data`.
+Open AI Tools and use the Job Importer.
 
-"For a quick demo, I added a generic workspace with applications, certifications, projects, skills, networking, interviews, goals, and resume notes."
+"Here I can paste a real posting from LinkedIn, Intern List, Handshake, Simplify, or a company site. Nexus extracts role keywords, compares them to my resume notes, and saves the opportunity into my application pipeline."
 
 ### 4. Explain The Dashboard
 
