@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS applications (
   id TEXT PRIMARY KEY,
   company TEXT NOT NULL,
   role TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('Wishlist', 'Applied', 'Interview', 'Offer', 'Rejected')),
+  status TEXT NOT NULL CHECK (status IN ('Saved', 'Applied', 'Interviewing', 'Offer', 'Rejected', 'Follow-up needed', 'Deadline approaching')),
   deadline TEXT,
   link TEXT,
   notes TEXT,

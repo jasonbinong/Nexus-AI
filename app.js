@@ -12,6 +12,9 @@ const starterState = {
     weeklyHours: 0
   },
   applications: [],
+  savedRoles: [],
+  jobAnalyses: [],
+  chat: [],
   certifications: [],
   projects: [],
   skills: [],
@@ -39,7 +42,7 @@ const sampleWorkspace = {
       id: "sample-app-1",
       company: "Capital One",
       role: "Technology Internship Program - Data Analyst",
-      status: "Interview",
+      status: "Interviewing",
       deadline: "2026-07-18",
       link: "https://www.capitalonecareers.com/",
       notes: "Prepare STAR story for Nexus AI backend and CareerLens market analysis."
@@ -57,7 +60,7 @@ const sampleWorkspace = {
       id: "sample-app-3",
       company: "Handshake",
       role: "Product Data Intern",
-      status: "Wishlist",
+      status: "Saved",
       deadline: "2026-08-02",
       link: "https://joinhandshake.com/careers/",
       notes: "Tailor resume bullets around career workflow data and student UX."
@@ -66,7 +69,7 @@ const sampleWorkspace = {
       id: "sample-app-4",
       company: "DoorDash",
       role: "AI Research Fellowship",
-      status: "Wishlist",
+      status: "Saved",
       deadline: "2026-08-15",
       link: "https://careers.doordash.com/",
       notes: "Draft proposal on AI coaching systems for local commerce learning loops."
@@ -273,7 +276,7 @@ const schemas = {
   applications: [
     ["company", "Company", "text"],
     ["role", "Role", "text"],
-    ["status", "Status", "select", ["Wishlist", "Applied", "Interview", "Offer", "Rejected"]],
+    ["status", "Status", "select", ["Saved", "Applied", "Interviewing", "Offer", "Rejected", "Follow-up needed", "Deadline approaching"]],
     ["deadline", "Deadline", "date"],
     ["link", "Posting link", "url"],
     ["notes", "Notes / next action", "text"]
@@ -325,6 +328,10 @@ let state = loadState();
 let currentView = "dashboard";
 let editing = null;
 let backendOnline = false;
+let currentRecommendations = [];
+let selectedApplicationId = "";
+let latestJobAnalysis = null;
+let latestGeneratedBullet = "";
 
 const els = {
   navItems: [...document.querySelectorAll(".nav-item")],
@@ -352,10 +359,21 @@ const els = {
   analyticsList: document.querySelector("#analyticsList"),
   dashboardSkillGaps: document.querySelector("#dashboardSkillGaps"),
   schemaPreview: document.querySelector("#schemaPreview"),
+  readinessTimeline: document.querySelector("#readinessTimeline"),
   applicationsList: document.querySelector("#applicationsList"),
   applicationStats: document.querySelector("#applicationStats"),
   applicationSearch: document.querySelector("#applicationSearch"),
   applicationFilter: document.querySelector("#applicationFilter"),
+  applicationDetail: document.querySelector("#applicationDetail"),
+  applicationDetailLabel: document.querySelector("#applicationDetailLabel"),
+  roleSearch: document.querySelector("#roleSearch"),
+  roleClusterFilter: document.querySelector("#roleClusterFilter"),
+  roleExplorer: document.querySelector("#roleExplorer"),
+  opportunityList: document.querySelector("#opportunityList"),
+  pathBuilder: document.querySelector("#pathBuilder"),
+  jobBoardSearch: document.querySelector("#jobBoardSearch"),
+  jobBoardCluster: document.querySelector("#jobBoardCluster"),
+  jobBoardList: document.querySelector("#jobBoardList"),
   certificationsList: document.querySelector("#certificationsList"),
   projectsList: document.querySelector("#projectsList"),
   skillsList: document.querySelector("#skillsList"),
@@ -366,6 +384,27 @@ const els = {
   goalsList: document.querySelector("#goalsList"),
   resumeDraft: document.querySelector("#resumeDraft"),
   resumeCoach: document.querySelector("#resumeCoach"),
+  bulletBuilderForm: document.querySelector("#bulletBuilderForm"),
+  bulletOutput: document.querySelector("#bulletOutput"),
+  aiToolSelect: document.querySelector("#aiToolSelect"),
+  aiApplicationSelect: document.querySelector("#aiApplicationSelect"),
+  aiPromptInput: document.querySelector("#aiPromptInput"),
+  aiOutput: document.querySelector("#aiOutput"),
+  aiProviderLabel: document.querySelector("#aiProviderLabel"),
+  runAiToolButton: document.querySelector("#runAiToolButton"),
+  copyAiOutputButton: document.querySelector("#copyAiOutputButton"),
+  jobDescriptionInput: document.querySelector("#jobDescriptionInput"),
+  analyzeJobButton: document.querySelector("#analyzeJobButton"),
+  saveAnalyzedJobButton: document.querySelector("#saveAnalyzedJobButton"),
+  jobAnalysisOutput: document.querySelector("#jobAnalysisOutput"),
+  jdScoreLabel: document.querySelector("#jdScoreLabel"),
+  chatThread: document.querySelector("#chatThread"),
+  chatCoachForm: document.querySelector("#chatCoachForm"),
+  profileNameHeading: document.querySelector("#profileNameHeading"),
+  profileSummary: document.querySelector("#profileSummary"),
+  profileScore: document.querySelector("#profileScore"),
+  profileSnapshot: document.querySelector("#profileSnapshot"),
+  profileProof: document.querySelector("#profileProof"),
   onboardingForm: document.querySelector("#onboardingForm"),
   onboardingChecklist: document.querySelector("#onboardingChecklist"),
   onboardingProgress: document.querySelector("#onboardingProgress"),
@@ -393,6 +432,15 @@ document.querySelector("#networkForm").addEventListener("submit", event => addFr
 document.querySelector("#interviewForm").addEventListener("submit", event => addFromForm(event, "interviews"));
 document.querySelector("#goalForm").addEventListener("submit", event => addFromForm(event, "goals"));
 document.querySelector("#saveResumeButton").addEventListener("click", saveResume);
+els.bulletBuilderForm.addEventListener("submit", buildResumeBullet);
+els.bulletOutput.addEventListener("click", event => {
+  if (event.target.matches("[data-add-bullet]")) appendBulletToResume();
+});
+els.runAiToolButton.addEventListener("click", runAiTool);
+els.copyAiOutputButton.addEventListener("click", copyAiOutput);
+els.analyzeJobButton.addEventListener("click", analyzeJobDescription);
+els.saveAnalyzedJobButton.addEventListener("click", saveAnalyzedJob);
+els.chatCoachForm.addEventListener("submit", sendChatMessage);
 els.downloadResumeButton.addEventListener("click", downloadResume);
 els.downloadSqlButton.addEventListener("click", downloadSqlSchema);
 els.downloadPlanButton.addEventListener("click", downloadCareerPlan);
@@ -406,6 +454,10 @@ els.profileForm.addEventListener("submit", saveProfile);
 els.onboardingForm.addEventListener("submit", saveOnboarding);
 els.applicationSearch.addEventListener("input", renderApplications);
 els.applicationFilter.addEventListener("change", renderApplications);
+els.roleSearch.addEventListener("input", renderExplore);
+els.roleClusterFilter.addEventListener("change", renderExplore);
+els.jobBoardSearch.addEventListener("input", renderJobBoard);
+els.jobBoardCluster.addEventListener("change", renderJobBoard);
 els.editForm.addEventListener("submit", saveEdit);
 els.navItems.forEach(item => item.addEventListener("click", () => switchView(item.dataset.view)));
 
@@ -418,8 +470,330 @@ const roleRequirements = {
   "systems analyst": ["Systems Analysis", "Database Management", "Business Analysis", "Agile", "Documentation"],
   "software": ["JavaScript", "Object-Oriented Programming", "GitHub", "Testing", "APIs"],
   "cloud": ["Cloud Computing", "Troubleshooting", "Networking", "Documentation", "Security"],
+  "cybersecurity": ["Security", "Networking", "Python", "Risk Analysis", "Documentation", "Troubleshooting"],
+  "ux": ["User Research", "Wireframing", "Communication", "Product Thinking", "Accessibility", "Data Analysis"],
+  "qa": ["Testing", "Documentation", "APIs", "Troubleshooting", "Communication", "JavaScript"],
+  "database": ["SQL", "Database Management", "Data Modeling", "APIs", "Documentation", "Security"],
   "default": ["SQL", "JavaScript", "Data Analysis", "Generative AI", "GitHub", "Communication"]
 };
+
+const careerPaths = [
+  {
+    id: "ai-data-analyst",
+    title: "AI Data Analyst Intern",
+    cluster: "AI",
+    matchTerms: ["ai data", "data analyst", "analytics", "llm"],
+    summary: "Uses analytics, LLM evaluation, and dashboarding to turn messy AI or product data into decisions.",
+    skills: ["SQL", "Data Analysis", "AI Model Evaluation", "Prompt Engineering", "Power BI", "Communication"],
+    proof: ["LLM evaluation rubric", "dashboard case study", "SQL analysis project"],
+    next: "Add one project that scores AI outputs or compares model responses with a clear rubric."
+  },
+  {
+    id: "software-engineer",
+    title: "Software Engineering Intern",
+    cluster: "Software",
+    matchTerms: ["software", "frontend", "backend", "full-stack", "developer"],
+    summary: "Builds production features, APIs, tests, and user workflows in a codebase with other engineers.",
+    skills: ["JavaScript", "APIs", "Testing", "GitHub", "Object-Oriented Programming", "Documentation"],
+    proof: ["deployed web app", "API endpoints", "tests or QA checklist"],
+    next: "Add tests and a short architecture note for one deployed project."
+  },
+  {
+    id: "business-intelligence",
+    title: "Business Intelligence Intern",
+    cluster: "Data",
+    matchTerms: ["business intelligence", "bi", "power bi", "reporting"],
+    summary: "Builds dashboards, metrics, and reporting workflows that help teams understand performance.",
+    skills: ["SQL", "Power BI", "Excel", "Data Visualization", "Business Analysis", "Communication"],
+    proof: ["Power BI dashboard", "metric definitions", "business recommendation"],
+    next: "Create one dashboard with a problem statement, metric logic, and recommendation."
+  },
+  {
+    id: "product-analyst",
+    title: "Product Analyst Intern",
+    cluster: "Product",
+    matchTerms: ["product", "analyst", "growth", "user"],
+    summary: "Studies user behavior, product funnels, and feature outcomes to recommend better product decisions.",
+    skills: ["Data Analysis", "SQL", "Product Thinking", "A/B Testing", "Communication", "User Research"],
+    proof: ["funnel analysis", "feature metric plan", "user problem case study"],
+    next: "Add product metrics to Nexus or CareerLens and explain what decision they support."
+  },
+  {
+    id: "cloud-systems",
+    title: "Cloud / Systems Intern",
+    cluster: "Cloud",
+    matchTerms: ["cloud", "systems", "infrastructure", "render", "oci"],
+    summary: "Supports deployments, monitoring, troubleshooting, databases, APIs, and reliable system operations.",
+    skills: ["Cloud Computing", "APIs", "Database Management", "Troubleshooting", "Security", "Documentation"],
+    proof: ["deployment guide", "API health checks", "database schema"],
+    next: "Document your Render backend, CORS setup, health endpoint, and database migration plan."
+  },
+  {
+    id: "ai-product-builder",
+    title: "AI Product Builder",
+    cluster: "AI",
+    matchTerms: ["ai", "product", "builder", "startup"],
+    summary: "Turns AI workflows into useful products with strong UX, evaluation, and clear user outcomes.",
+    skills: ["Generative AI", "Prompt Engineering", "JavaScript", "Systems Analysis", "User Research", "Data Analysis"],
+    proof: ["AI feature workflow", "case study", "before-after product decision"],
+    next: "Add one AI coaching workflow that explains why each recommendation was made."
+  },
+  {
+    id: "llm-evaluation-specialist",
+    title: "LLM Evaluation Specialist",
+    cluster: "AI",
+    matchTerms: ["llm", "evaluation", "ai data", "red team"],
+    summary: "Designs rubrics, reviews model outputs, identifies failure patterns, and improves AI reliability.",
+    skills: ["AI Model Evaluation", "Prompt Engineering", "Data Quality", "Communication", "Critical Thinking", "Documentation"],
+    proof: ["evaluation rubric", "annotated examples", "quality improvement summary"],
+    next: "Create a public rubric that scores AI responses for accuracy, helpfulness, safety, and evidence use."
+  },
+  {
+    id: "prompt-engineering-analyst",
+    title: "Prompt Engineering Analyst",
+    cluster: "AI",
+    matchTerms: ["prompt", "llm", "ai"],
+    summary: "Improves AI workflows by testing prompts, measuring outputs, and documenting reusable patterns.",
+    skills: ["Prompt Engineering", "Generative AI", "AI Model Evaluation", "Documentation", "Data Analysis", "Communication"],
+    proof: ["prompt iteration log", "before-after outputs", "evaluation notes"],
+    next: "Document one prompt workflow where a measurable output improved after iteration."
+  },
+  {
+    id: "ai-red-teamer",
+    title: "AI Red Teamer",
+    cluster: "AI",
+    matchTerms: ["red team", "safety", "ai", "llm"],
+    summary: "Tests AI systems for unsafe, biased, hallucinated, or policy-breaking behavior.",
+    skills: ["AI Model Evaluation", "Risk Analysis", "Prompt Engineering", "Security", "Documentation", "Communication"],
+    proof: ["failure taxonomy", "test prompts", "mitigation recommendations"],
+    next: "Build a small AI safety test suite with prompt categories and scored outcomes."
+  },
+  {
+    id: "machine-learning-intern",
+    title: "Machine Learning Intern",
+    cluster: "AI",
+    matchTerms: ["machine learning", "ml", "python"],
+    summary: "Builds or evaluates predictive models, prepares datasets, and communicates model results.",
+    skills: ["Python", "Machine Learning", "Statistics", "SQL", "Data Visualization", "Communication"],
+    proof: ["model notebook converted to app", "evaluation metrics", "data cleaning summary"],
+    next: "Turn one ML experiment into a deployable app or API with clear evaluation metrics."
+  },
+  {
+    id: "data-scientist-intern",
+    title: "Data Scientist Intern",
+    cluster: "Data",
+    matchTerms: ["data scientist", "data science", "python"],
+    summary: "Uses statistics, experiments, and modeling to answer product or business questions.",
+    skills: ["Python", "SQL", "Statistics", "Data Analysis", "Machine Learning", "Communication"],
+    proof: ["analysis project", "model evaluation", "business recommendation"],
+    next: "Add one end-to-end data project with a question, method, result, and recommendation."
+  },
+  {
+    id: "data-engineering-intern",
+    title: "Data Engineering Intern",
+    cluster: "Data",
+    matchTerms: ["data engineering", "pipeline", "etl"],
+    summary: "Builds data pipelines, schemas, and reliable workflows for analytics and product teams.",
+    skills: ["SQL", "Python", "Database Management", "APIs", "Data Modeling", "Cloud Computing"],
+    proof: ["ETL pipeline", "schema design", "data quality checks"],
+    next: "Build a small pipeline that ingests, cleans, stores, and reports on application data."
+  },
+  {
+    id: "database-analyst",
+    title: "Database Analyst Intern",
+    cluster: "Data",
+    matchTerms: ["database", "sql", "data"],
+    summary: "Designs tables, writes queries, validates records, and supports reporting systems.",
+    skills: ["SQL", "Database Management", "Data Modeling", "Documentation", "Data Quality", "Business Analysis"],
+    proof: ["relational schema", "query examples", "data validation checklist"],
+    next: "Add a database case study explaining Nexus tables, relationships, and query use cases."
+  },
+  {
+    id: "frontend-engineer",
+    title: "Frontend Engineering Intern",
+    cluster: "Software",
+    matchTerms: ["frontend", "javascript", "react", "ui"],
+    summary: "Builds user-facing interfaces with accessible components, clean state, and responsive layouts.",
+    skills: ["JavaScript", "React", "HTML", "CSS", "Accessibility", "Testing"],
+    proof: ["responsive UI", "component states", "accessibility notes"],
+    next: "Add a React or component-based version of one Nexus workflow with documented states."
+  },
+  {
+    id: "backend-engineer",
+    title: "Backend Engineering Intern",
+    cluster: "Software",
+    matchTerms: ["backend", "api", "fastapi", "server"],
+    summary: "Builds APIs, database workflows, validation, tests, and service documentation.",
+    skills: ["Python", "FastAPI", "APIs", "SQLite", "Testing", "Documentation"],
+    proof: ["API routes", "schema", "contract tests"],
+    next: "Add endpoint tests and a clear API contract table to Nexus."
+  },
+  {
+    id: "full-stack-engineer",
+    title: "Full-Stack Engineering Intern",
+    cluster: "Software",
+    matchTerms: ["full-stack", "full stack", "software"],
+    summary: "Connects frontend workflows, backend APIs, database logic, and deployment.",
+    skills: ["JavaScript", "Python", "APIs", "Database Management", "GitHub", "Cloud Computing"],
+    proof: ["deployed frontend", "backend API", "database-backed workflow"],
+    next: "Record a walkthrough showing a frontend action updating backend data."
+  },
+  {
+    id: "software-qa-engineer",
+    title: "Software Quality Engineer Intern",
+    cluster: "Software",
+    matchTerms: ["qa", "quality", "testing", "software"],
+    summary: "Tests software manually and automatically, writes bug reports, and protects product quality.",
+    skills: ["Testing", "Documentation", "APIs", "Troubleshooting", "Communication", "JavaScript"],
+    proof: ["test plan", "bug reports", "QA checklist"],
+    next: "Create a QA test plan for Nexus with expected results, edge cases, and bug severity."
+  },
+  {
+    id: "devops-intern",
+    title: "DevOps Intern",
+    cluster: "Cloud",
+    matchTerms: ["devops", "deployment", "cloud"],
+    summary: "Improves deployments, environment setup, monitoring, automation, and reliability.",
+    skills: ["Cloud Computing", "GitHub", "APIs", "Docker", "Troubleshooting", "Documentation"],
+    proof: ["deployment guide", "environment variables", "health checks"],
+    next: "Add a deployment diagram and environment variable guide for Nexus."
+  },
+  {
+    id: "cloud-engineer",
+    title: "Cloud Engineering Intern",
+    cluster: "Cloud",
+    matchTerms: ["cloud", "oci", "aws", "azure"],
+    summary: "Supports cloud-hosted apps, security basics, databases, and service configuration.",
+    skills: ["Cloud Computing", "Security", "Networking", "Database Management", "Troubleshooting", "Documentation"],
+    proof: ["cloud deployment", "certification", "architecture notes"],
+    next: "Compare Render, GitHub Pages, OCI, and PostgreSQL as a deployment decision record."
+  },
+  {
+    id: "cybersecurity-analyst",
+    title: "Cybersecurity Analyst Intern",
+    cluster: "Cybersecurity",
+    matchTerms: ["cybersecurity", "security", "risk"],
+    summary: "Identifies risks, reviews system behavior, documents findings, and supports safer operations.",
+    skills: ["Security", "Networking", "Risk Analysis", "Python", "Documentation", "Troubleshooting"],
+    proof: ["risk register", "security checklist", "incident-style analysis"],
+    next: "Add a security checklist for Nexus covering auth, data privacy, CORS, and input validation."
+  },
+  {
+    id: "security-engineer",
+    title: "Security Engineering Intern",
+    cluster: "Cybersecurity",
+    matchTerms: ["security engineer", "security", "software"],
+    summary: "Builds or tests secure systems, reviews code paths, and improves defensive controls.",
+    skills: ["Security", "APIs", "Testing", "Python", "Cloud Computing", "Documentation"],
+    proof: ["secure API review", "threat model", "validation tests"],
+    next: "Create a threat model for Nexus with assets, risks, controls, and residual concerns."
+  },
+  {
+    id: "product-manager",
+    title: "Associate Product Manager Intern",
+    cluster: "Product",
+    matchTerms: ["product manager", "apm", "product"],
+    summary: "Defines user problems, prioritizes features, coordinates execution, and measures outcomes.",
+    skills: ["Product Thinking", "User Research", "Communication", "Data Analysis", "Agile", "Systems Analysis"],
+    proof: ["product case study", "roadmap", "success metrics"],
+    next: "Write a one-page product requirements doc for Nexus AI Tools."
+  },
+  {
+    id: "technical-product-manager",
+    title: "Technical Product Manager Intern",
+    cluster: "Product",
+    matchTerms: ["technical product", "product", "api"],
+    summary: "Connects user needs to technical architecture, API decisions, and measurable product outcomes.",
+    skills: ["Product Thinking", "Systems Analysis", "APIs", "Data Analysis", "Communication", "Agile"],
+    proof: ["technical PRD", "architecture tradeoffs", "roadmap"],
+    next: "Document why Nexus uses local fallback plus API-backed AI tools."
+  },
+  {
+    id: "ux-researcher",
+    title: "UX Research Intern",
+    cluster: "UX",
+    matchTerms: ["ux", "research", "user"],
+    summary: "Studies user needs, tests product workflows, and turns feedback into product decisions.",
+    skills: ["User Research", "Communication", "Data Analysis", "Product Thinking", "Accessibility", "Documentation"],
+    proof: ["interview script", "research synthesis", "usability findings"],
+    next: "Run a small usability test with classmates and summarize three product changes."
+  },
+  {
+    id: "ui-ux-designer",
+    title: "UI/UX Design Intern",
+    cluster: "UX",
+    matchTerms: ["ui", "ux", "design"],
+    summary: "Designs interfaces, workflows, wireframes, and accessible user experiences.",
+    skills: ["Wireframing", "Accessibility", "User Research", "Product Thinking", "Communication", "HTML"],
+    proof: ["wireframes", "prototype", "design rationale"],
+    next: "Create a before-after design case study for the Nexus modern platform refresh."
+  },
+  {
+    id: "business-systems-analyst",
+    title: "Business Systems Analyst Intern",
+    cluster: "Business",
+    matchTerms: ["business systems", "systems analyst", "business analyst"],
+    summary: "Maps requirements, processes, data flows, and system changes for business teams.",
+    skills: ["Systems Analysis", "Business Analysis", "SQL", "Documentation", "Agile", "Communication"],
+    proof: ["requirements document", "workflow map", "data model"],
+    next: "Add a workflow map showing how Nexus converts student inputs into recommendations."
+  },
+  {
+    id: "it-support-analyst",
+    title: "IT Support Analyst Intern",
+    cluster: "IT",
+    matchTerms: ["it support", "help desk", "systems"],
+    summary: "Troubleshoots user issues, documents fixes, supports systems, and communicates clearly.",
+    skills: ["Troubleshooting", "Documentation", "Communication", "Networking", "Security", "Systems Analysis"],
+    proof: ["support playbook", "ticket examples", "knowledge base article"],
+    next: "Create a support-style troubleshooting guide for Nexus setup and API connection issues."
+  },
+  {
+    id: "crm-operations",
+    title: "CRM / Operations Analyst Intern",
+    cluster: "Business",
+    matchTerms: ["operations", "crm", "business"],
+    summary: "Manages operational workflows, reporting, customer data, and process improvements.",
+    skills: ["Excel", "SQL", "Business Analysis", "Data Analysis", "Communication", "Systems Analysis"],
+    proof: ["tracker workflow", "dashboard", "process improvement note"],
+    next: "Frame Nexus as a CRM for student career prep and document the workflow metrics."
+  }
+];
+
+const opportunityTemplates = [
+  {
+    company: "Campus Career Center",
+    role: "Student Career Technology Assistant",
+    cluster: "Product",
+    deadlineOffset: 10,
+    tags: ["student support", "dashboards", "workflow"],
+    notes: "Position Nexus as proof that you can build student career tools."
+  },
+  {
+    company: "Transportation Analytics Lab",
+    role: "Software Quality Engineer Intern",
+    cluster: "Software",
+    deadlineOffset: 16,
+    tags: ["testing", "analytics", "QA"],
+    notes: "Emphasize manual testing, bug reports, backend endpoints, and clean documentation."
+  },
+  {
+    company: "AI Platform Startup",
+    role: "AI Data Evaluation Intern",
+    cluster: "AI",
+    deadlineOffset: 21,
+    tags: ["LLM evaluation", "rubrics", "data quality"],
+    notes: "Lead with AI Data Trainer experience and Nexus coaching/evaluation logic."
+  },
+  {
+    company: "Cloud Operations Team",
+    role: "Cloud Systems Intern",
+    cluster: "Cloud",
+    deadlineOffset: 28,
+    tags: ["APIs", "Render", "databases"],
+    notes: "Use Nexus backend deployment, health checks, CORS, SQLite, and PostgreSQL plan as proof."
+  }
+];
 
 initApp();
 
@@ -532,6 +906,9 @@ function fromBackendSnapshot(snapshot) {
       weeklyHours: snapshot.profile?.weekly_hours || 0
     },
     applications: snapshot.applications || [],
+    savedRoles: state?.savedRoles || [],
+    jobAnalyses: state?.jobAnalyses || [],
+    chat: state?.chat || [],
     certifications: snapshot.certifications || [],
     projects: snapshot.projects || [],
     skills: snapshot.skills || [],
@@ -567,6 +944,9 @@ function normalizeState(raw) {
   next.onboarding = { ...starterState.onboarding, ...(raw.onboarding || {}) };
   next.resume = typeof raw.resume === "string" ? raw.resume : starterState.resume;
   next.activity = Array.isArray(raw.activity) ? raw.activity.slice(0, 50) : [];
+  next.savedRoles = Array.isArray(raw.savedRoles) ? raw.savedRoles : [];
+  next.jobAnalyses = Array.isArray(raw.jobAnalyses) ? raw.jobAnalyses : [];
+  next.chat = Array.isArray(raw.chat) ? raw.chat.slice(-20) : [];
 
   Object.keys(schemas).forEach(collection => {
     next[collection] = next[collection].map(item => ({ id: item.id || createId(), ...item }));
@@ -862,6 +1242,8 @@ function persistAndRender() {
 function render() {
   renderProfile();
   renderDashboard();
+  renderExplore();
+  renderJobBoard();
   renderApplications();
   renderCertifications();
   renderProjects();
@@ -870,6 +1252,8 @@ function render() {
   renderInterviews();
   renderGoals();
   renderResume();
+  renderAiTools();
+  renderProfileView();
   renderOnboarding();
   renderCaseStudy();
 }
@@ -885,7 +1269,11 @@ function renderProfile() {
 
 function renderOnboarding() {
   if (!els.onboardingForm) return;
-  els.onboardingForm.targetRole.value = state.profile.targetRole || "";
+  const targetRole = state.profile.targetRole || "";
+  if (targetRole && ![...els.onboardingForm.targetRole.options].some(option => option.value === targetRole)) {
+    els.onboardingForm.targetRole.add(new Option(targetRole, targetRole));
+  }
+  els.onboardingForm.targetRole.value = targetRole;
   els.onboardingForm.major.value = state.profile.major || "";
   els.onboardingForm.graduation.value = state.profile.graduation || "";
   els.onboardingForm.weeklyHours.value = state.profile.weeklyHours || "";
@@ -1002,6 +1390,238 @@ function renderDashboard() {
   const fit = calculateSkillFit();
   els.dashboardSkillGaps.innerHTML = renderSkillGapCards(fit.gaps.slice(0, 5), fit.matched);
   els.schemaPreview.innerHTML = renderSchemaPreview();
+  els.readinessTimeline.innerHTML = renderReadinessTimeline();
+}
+
+function renderExplore() {
+  if (!els.roleExplorer) return;
+  const query = els.roleSearch.value.trim().toLowerCase();
+  const cluster = els.roleClusterFilter.value;
+  const filteredPaths = careerPaths
+    .map(path => ({ ...path, fit: calculatePathFit(path) }))
+    .filter(path => {
+      const searchable = `${path.title} ${path.cluster} ${path.summary} ${path.skills.join(" ")}`.toLowerCase();
+      return (!query || searchable.includes(query)) && (cluster === "all" || path.cluster === cluster);
+    })
+    .sort((a, b) => b.fit.score - a.fit.score);
+
+  els.roleExplorer.innerHTML = filteredPaths.map(path => `
+    <article class="role-card">
+      <div class="role-card-top">
+        <span class="cluster-pill">${escapeHtml(path.cluster)}</span>
+        <strong>${path.fit.score}% fit</strong>
+      </div>
+      <h3>${escapeHtml(path.title)}</h3>
+      <p>${escapeHtml(path.summary)}</p>
+      <div class="mini-skill-list">
+        ${path.skills.slice(0, 6).map(skill => `<span class="${path.fit.matched.includes(skill) ? "matched" : ""}">${escapeHtml(skill)}</span>`).join("")}
+      </div>
+      <div class="role-proof">
+        <strong>Proof recruiters expect</strong>
+        <p>${escapeHtml(path.proof.join(" | "))}</p>
+      </div>
+      <div class="button-row">
+        <button class="primary-button" type="button" onclick="selectCareerPath('${path.id}')">Use Path</button>
+        <button class="secondary-button" type="button" onclick="saveRoleFromPath('${path.id}')">Save Role</button>
+      </div>
+    </article>
+  `).join("") || emptyState("No paths match that search.");
+
+  currentRecommendations = getRecommendedOpportunities(filteredPaths);
+  const opportunityCards = currentRecommendations.map((item, index) => `
+    <div class="opportunity-card">
+      <div class="role-card-top">
+        <span class="cluster-pill">${escapeHtml(item.cluster)}</span>
+        <strong>${item.fit}% fit</strong>
+      </div>
+      <h4>${escapeHtml(item.role)}</h4>
+      <p>${escapeHtml(item.company)} | Due ${formatDate(item.deadline)}</p>
+      <div class="mini-skill-list">
+        ${item.tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join("")}
+      </div>
+      <p>${escapeHtml(item.notes)}</p>
+      <button class="primary-button full-width" type="button" onclick="saveOpportunity(${index})">Save To Pipeline</button>
+    </div>
+  `).join("");
+  els.opportunityList.innerHTML = opportunityCards || emptyState("Save a target role or add skills to unlock recommendations.");
+
+  const bestPath = filteredPaths[0] || careerPaths.map(path => ({ ...path, fit: calculatePathFit(path) })).sort((a, b) => b.fit.score - a.fit.score)[0];
+  els.pathBuilder.innerHTML = bestPath ? [
+    actionItem(`Aim at ${bestPath.title}`, `Best current fit based on your profile and proof: ${bestPath.fit.score}%.`, "Now", "Path"),
+    actionItem("Close the first missing skill", bestPath.fit.missing[0] ? getSkillGapAction(bestPath.fit.missing[0]) : "Your tracked skills match this path well. Add stronger evidence for the skills you already have.", "60 min", "This week"),
+    actionItem("Add recruiter proof", bestPath.next, "90 min", "This week"),
+    actionItem("Save one matched opportunity", "Move from browsing to pipeline by saving one role with a deadline and next action.", "10 min", "Today")
+  ].map((item, index) => `
+    <div class="action-card priority-${index + 1}">
+      <div class="action-card-top">
+        <span>${escapeHtml(item.due)}</span>
+        <strong>${escapeHtml(item.time)}</strong>
+      </div>
+      <h4>${escapeHtml(item.action)}</h4>
+      <p>${escapeHtml(item.reason)}</p>
+    </div>
+  `).join("") : emptyState("Add a target role to generate a path.");
+}
+
+function calculatePathFit(path) {
+  const skillNames = new Set(state.skills.map(skill => normalizeSkill(skill.name)));
+  const evidenceText = [
+    state.profile.targetRole,
+    state.profile.major,
+    state.resume,
+    ...state.projects.map(project => `${project.name} ${project.stack} ${project.impact}`),
+    ...state.certifications.map(cert => `${cert.name} ${cert.provider}`)
+  ].join(" ").toLowerCase();
+  const matched = path.skills.filter(skill => skillNames.has(normalizeSkill(skill)) || evidenceText.includes(skill.toLowerCase()));
+  const targetBoost = path.matchTerms.some(term => String(state.profile.targetRole || "").toLowerCase().includes(term)) ? 18 : 0;
+  const proofBoost = Math.min(state.projects.filter(project => project.link).length * 4, 12);
+  const pipelineBoost = Math.min(state.applications.length * 2, 8);
+  const score = Math.min(99, Math.round((matched.length / path.skills.length) * 62 + targetBoost + proofBoost + pipelineBoost));
+  return { score, matched, missing: path.skills.filter(skill => !matched.includes(skill)) };
+}
+
+function getRecommendedOpportunities(paths) {
+  const topClusters = new Set(paths.slice(0, 3).map(path => path.cluster));
+  const today = new Date();
+  return opportunityTemplates
+    .filter(item => !topClusters.size || topClusters.has(item.cluster))
+    .map(item => {
+      const path = paths.find(candidate => candidate.cluster === item.cluster) || careerPaths.find(candidate => candidate.cluster === item.cluster);
+      const deadline = new Date(today);
+      deadline.setDate(today.getDate() + item.deadlineOffset);
+      return {
+        ...item,
+        deadline: deadline.toISOString().slice(0, 10),
+        fit: path ? calculatePathFit(path).score : calculateSkillFit().coverage
+      };
+    })
+    .sort((a, b) => b.fit - a.fit)
+    .slice(0, 4);
+}
+
+function getExpandedJobBoard() {
+  const today = new Date();
+  return careerPaths.map((path, index) => {
+    const deadline = new Date(today);
+    deadline.setDate(today.getDate() + 7 + (index % 8) * 4);
+    const companies = {
+      AI: ["AI Platform Startup", "Handshake AI", "Responsible AI Lab", "Voice AI Studio"],
+      Data: ["Civic Data Lab", "Campus Analytics Team", "Commerce Insights Group", "Transportation Analytics Lab"],
+      Software: ["Product Engineering Team", "UMD CATT Lab", "Developer Tools Startup", "Student Success Platform"],
+      Cloud: ["Cloud Operations Team", "Infrastructure Lab", "Enterprise Systems Group", "Campus IT Cloud"],
+      Cybersecurity: ["Security Operations Center", "Cloud Security Team", "AI Governance Lab", "Risk Analytics Group"],
+      Product: ["Student Product Studio", "Career Tech Startup", "Learning Platform Team", "Campus Innovation Lab"],
+      UX: ["Human-Centered AI Lab", "Student Experience Team", "Product Design Studio", "Accessibility Research Group"],
+      Business: ["Operations Analytics Team", "CRM Systems Group", "Strategy and Insights Lab", "Business Systems Office"],
+      IT: ["Campus IT Services", "Technology Support Center", "Systems Operations Team", "Enterprise Support Desk"]
+    };
+    const companyList = companies[path.cluster] || companies.Software;
+    return {
+      id: `board-${path.id}`,
+      company: companyList[index % companyList.length],
+      role: path.title,
+      cluster: path.cluster,
+      deadline: deadline.toISOString().slice(0, 10),
+      fit: calculatePathFit(path).score,
+      skills: path.skills.slice(0, 4),
+      notes: path.next
+    };
+  });
+}
+
+function renderJobBoard() {
+  if (!els.jobBoardList) return;
+  const query = els.jobBoardSearch.value.trim().toLowerCase();
+  const cluster = els.jobBoardCluster.value;
+  const jobs = getExpandedJobBoard()
+    .filter(job => {
+      const searchable = `${job.company} ${job.role} ${job.cluster} ${job.skills.join(" ")}`.toLowerCase();
+      return (!query || searchable.includes(query)) && (cluster === "all" || job.cluster === cluster);
+    })
+    .sort((a, b) => b.fit - a.fit);
+
+  els.jobBoardList.innerHTML = jobs.map(job => `
+    <article class="job-card">
+      <div class="role-card-top">
+        <span class="cluster-pill">${escapeHtml(job.cluster)}</span>
+        <strong>${job.fit}% fit</strong>
+      </div>
+      <h3>${escapeHtml(job.role)}</h3>
+      <p>${escapeHtml(job.company)} | Due ${formatDate(job.deadline)}</p>
+      <div class="mini-skill-list">
+        ${job.skills.map(skill => `<span>${escapeHtml(skill)}</span>`).join("")}
+      </div>
+      <p>${escapeHtml(job.notes)}</p>
+      <button class="primary-button full-width" type="button" onclick="saveJobBoardApplication('${job.id}')">Save To Pipeline</button>
+    </article>
+  `).join("") || emptyState("No jobs match this search.");
+}
+
+function saveJobBoardApplication(jobId) {
+  const job = getExpandedJobBoard().find(item => item.id === jobId);
+  if (!job) return;
+  const exists = state.applications.some(app => normalizeSkill(`${app.company}${app.role}`) === normalizeSkill(`${job.company}${job.role}`));
+  if (!exists) {
+    state.applications.push({
+      id: createId(),
+      company: job.company,
+      role: job.role,
+      status: "Saved",
+      deadline: job.deadline,
+      link: "",
+      notes: job.notes
+    });
+    selectedApplicationId = state.applications[state.applications.length - 1].id;
+    addActivity(`Saved job board role: ${job.company} ${job.role}`);
+    saveState();
+  }
+  render();
+  switchView("applications");
+}
+
+function selectCareerPath(pathId) {
+  const path = careerPaths.find(item => item.id === pathId);
+  if (!path) return;
+  state.profile.targetRole = path.title;
+  state.onboarding.primaryGoal = state.onboarding.primaryGoal || "Land an internship";
+  addActivity(`Selected career path: ${path.title}`);
+  saveState();
+  render();
+  switchView("dashboard");
+}
+
+function saveRoleFromPath(pathId) {
+  const path = careerPaths.find(item => item.id === pathId);
+  if (!path) return;
+  const alreadySaved = state.savedRoles.some(item => item.id === path.id);
+  if (!alreadySaved) {
+    state.savedRoles.push({ id: path.id, title: path.title, cluster: path.cluster, savedAt: new Date().toISOString() });
+  }
+  state.profile.targetRole = state.profile.targetRole || path.title;
+  addActivity(`Saved role path: ${path.title}`);
+  saveState();
+  render();
+}
+
+function saveOpportunity(index) {
+  const item = currentRecommendations[index];
+  if (!item) return;
+  const exists = state.applications.some(app => normalizeSkill(`${app.company}${app.role}`) === normalizeSkill(`${item.company}${item.role}`));
+  if (!exists) {
+    state.applications.push({
+      id: createId(),
+      company: item.company,
+      role: item.role,
+      status: "Saved",
+      deadline: item.deadline,
+      link: "",
+      notes: item.notes
+    });
+    addActivity(`Saved opportunity to pipeline: ${item.company} ${item.role}`);
+    saveState();
+  }
+  render();
+  switchView("applications");
 }
 
 function generatePriorityAlerts() {
@@ -1052,6 +1672,47 @@ function renderApplications() {
     `Due ${formatDate(item.deadline)}`,
     item.notes || "No next action"
   ])).join("") || emptyState("No applications match this view.");
+  if (!selectedApplicationId && state.applications[0]) selectedApplicationId = state.applications[0].id;
+  renderApplicationDetail();
+}
+
+function renderApplicationDetail() {
+  if (!els.applicationDetail) return;
+  const selected = state.applications.find(item => item.id === selectedApplicationId) || state.applications[0];
+  if (!selected) {
+    els.applicationDetailLabel.textContent = "Select a role";
+    els.applicationDetail.innerHTML = emptyState("Save or add an application to see resume match, follow-up plan, and interview prep.");
+    return;
+  }
+  selectedApplicationId = selected.id;
+  const match = scoreResumeAgainstText(`${selected.company} ${selected.role} ${selected.notes}`);
+  const plan = [
+    ["Tailor resume", `Add keywords: ${match.missing.slice(0, 4).join(", ") || "your resume already covers the strongest terms"}.`],
+    ["Prepare proof", strongestProjectLine()],
+    ["Follow up", selected.status === "Applied" || selected.status === "Follow-up needed" ? "Send a concise follow-up with portfolio link and one role-specific proof point." : "Set a follow-up date after applying."],
+    ["Interview prep", `Practice explaining how Nexus relates to ${selected.role}.`]
+  ];
+  els.applicationDetailLabel.textContent = `${selected.company} - ${selected.role}`;
+  els.applicationDetail.innerHTML = `
+    <div class="match-card">
+      <strong>${match.score}% resume-role match</strong>
+      <div class="progress-track"><div class="progress-fill" style="width:${match.score}%"></div></div>
+      <p>${escapeHtml(match.summary)}</p>
+    </div>
+    <div class="detail-actions">
+      ${plan.map(([title, body]) => `
+        <div class="coach-card">
+          <h4>${escapeHtml(title)}</h4>
+          <p>${escapeHtml(body)}</p>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function selectApplicationDetail(id) {
+  selectedApplicationId = id;
+  renderApplications();
 }
 
 function renderCertifications() {
@@ -1136,6 +1797,362 @@ function renderResume() {
       <p>${escapeHtml(card.body)}</p>
     </div>
   `).join("");
+  if (!els.bulletOutput.innerHTML.trim()) {
+    els.bulletOutput.innerHTML = emptyState("Build a resume bullet from a project, tool, and result.");
+  }
+}
+
+function renderAiTools() {
+  if (!els.aiApplicationSelect) return;
+  const options = [
+    `<option value="">Use overall workspace</option>`,
+    ...state.applications.map(item => `<option value="${escapeAttribute(item.id)}">${escapeHtml(item.company)} - ${escapeHtml(item.role)}</option>`)
+  ];
+  const current = els.aiApplicationSelect.value;
+  els.aiApplicationSelect.innerHTML = options.join("");
+  if ([...els.aiApplicationSelect.options].some(option => option.value === current)) {
+    els.aiApplicationSelect.value = current;
+  }
+  if (!els.aiOutput.innerHTML.trim()) {
+    els.aiOutput.innerHTML = emptyState("Choose a tool and run it to generate career guidance.");
+  }
+  renderChatThread();
+  if (!els.jobAnalysisOutput.innerHTML.trim()) {
+    els.jobAnalysisOutput.innerHTML = emptyState("Paste a job description to extract keywords and match your resume.");
+  }
+}
+
+function buildResumeBullet(event) {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(event.currentTarget).entries());
+  const action = cleanSentencePart(data.action);
+  const tool = cleanSentencePart(data.tool);
+  const project = cleanSentencePart(data.project);
+  const result = cleanSentencePart(data.result);
+  const bullet = `- ${action} ${project} using ${tool} to ${result}.`;
+  latestGeneratedBullet = bullet;
+  els.bulletOutput.innerHTML = `
+    <div class="coach-card">
+      <h4>Generated bullet</h4>
+      <p>${escapeHtml(bullet)}</p>
+    </div>
+    <div class="button-row">
+      <button class="secondary-button" type="button" data-add-bullet>Add To Resume Notes</button>
+    </div>
+  `;
+  event.currentTarget.reset();
+}
+
+function appendBulletToResume() {
+  const bullet = latestGeneratedBullet;
+  if (!bullet) return;
+  state.resume = `${state.resume.trim()}${state.resume.trim() ? "\n" : ""}${bullet}`.trim();
+  addActivity("Added generated resume bullet");
+  saveState();
+  render();
+}
+
+function cleanSentencePart(value) {
+  return String(value || "").trim().replace(/[.]+$/, "");
+}
+
+function analyzeJobDescription() {
+  const text = els.jobDescriptionInput.value.trim();
+  if (!text) {
+    els.jobAnalysisOutput.innerHTML = emptyState("Paste a job description first.");
+    return;
+  }
+  const keywords = extractKeywords(text);
+  const score = scoreResumeAgainstText(text);
+  const roleGuess = inferRoleFromDescription(text);
+  const interviewTopics = [...new Set([...score.missing.slice(0, 4), ...keywords.slice(0, 3)])].slice(0, 6);
+  latestJobAnalysis = {
+    id: createId(),
+    createdAt: new Date().toISOString(),
+    role: roleGuess,
+    company: "Imported Job",
+    text,
+    keywords,
+    score: score.score,
+    missing: score.missing,
+    matched: score.matched,
+    interviewTopics
+  };
+  state.jobAnalyses = [latestJobAnalysis, ...state.jobAnalyses].slice(0, 10);
+  els.jdScoreLabel.textContent = `${score.score}% resume match`;
+  els.jobAnalysisOutput.innerHTML = `
+    <div class="match-card">
+      <strong>${score.score}% resume-to-role match</strong>
+      <div class="progress-track"><div class="progress-fill" style="width:${score.score}%"></div></div>
+      <p>${escapeHtml(score.summary)}</p>
+    </div>
+    <div class="analysis-grid">
+      <div class="coach-card">
+        <h4>Extracted keywords</h4>
+        <p>${escapeHtml(keywords.join(", ") || "No strong keywords detected.")}</p>
+      </div>
+      <div class="coach-card">
+        <h4>Missing proof</h4>
+        <p>${escapeHtml(score.missing.slice(0, 8).join(", ") || "No major keyword gaps detected.")}</p>
+      </div>
+      <div class="coach-card">
+        <h4>Interview topics</h4>
+        <p>${escapeHtml(interviewTopics.join(", ") || "Prepare a project walkthrough and behavioral story.")}</p>
+      </div>
+      <div class="coach-card">
+        <h4>Suggested resume move</h4>
+        <p>${escapeHtml(score.missing[0] ? getSkillGapAction(score.missing[0]) : "Add a stronger metric to your best project bullet.")}</p>
+      </div>
+    </div>
+  `;
+  addActivity(`Analyzed job description for ${roleGuess}`);
+  saveState();
+}
+
+function inferRoleFromDescription(text) {
+  const lower = text.toLowerCase();
+  const match = careerPaths.find(path => path.matchTerms.some(term => lower.includes(term)) || lower.includes(path.title.toLowerCase()));
+  if (match) return match.title;
+  if (lower.includes("data")) return "Data Analyst Intern";
+  if (lower.includes("software") || lower.includes("developer")) return "Software Engineering Intern";
+  if (lower.includes("security")) return "Cybersecurity Analyst Intern";
+  if (lower.includes("product")) return "Product Analyst Intern";
+  return state.profile.targetRole || "Imported Role";
+}
+
+function saveAnalyzedJob() {
+  if (!latestJobAnalysis) {
+    analyzeJobDescription();
+    if (!latestJobAnalysis) return;
+  }
+  state.applications.push({
+    id: createId(),
+    company: latestJobAnalysis.company,
+    role: latestJobAnalysis.role,
+    status: "Saved",
+    deadline: "",
+    link: "",
+    notes: `JD match ${latestJobAnalysis.score}%. Missing proof: ${latestJobAnalysis.missing.slice(0, 4).join(", ") || "none detected"}.`
+  });
+  selectedApplicationId = state.applications[state.applications.length - 1].id;
+  addActivity(`Saved analyzed job: ${latestJobAnalysis.role}`);
+  saveState();
+  render();
+  switchView("applications");
+}
+
+function renderChatThread() {
+  if (!els.chatThread) return;
+  els.chatThread.innerHTML = state.chat.map(item => `
+    <div class="chat-message ${item.role === "user" ? "from-user" : "from-coach"}">
+      <strong>${item.role === "user" ? "You" : "Nexus Coach"}</strong>
+      <p>${escapeHtml(item.message)}</p>
+    </div>
+  `).join("") || emptyState("Ask a question like: What should I do today? How do I improve this bullet? Am I ready for AI internships?");
+}
+
+async function sendChatMessage(event) {
+  event.preventDefault();
+  const input = event.currentTarget.message;
+  const message = input.value.trim();
+  if (!message) return;
+  state.chat.push({ role: "user", message, at: new Date().toISOString() });
+  const response = generateChatResponse(message);
+  state.chat.push({ role: "coach", message: response, at: new Date().toISOString() });
+  state.chat = state.chat.slice(-20);
+  input.value = "";
+  addActivity("Asked AI chat coach a question");
+  saveState();
+  render();
+}
+
+function generateChatResponse(message) {
+  const lower = message.toLowerCase();
+  const score = calculateCareerScore();
+  const fit = calculateSkillFit();
+  if (lower.includes("today") || lower.includes("next")) {
+    const plan = generateWeeklyPlan()[0];
+    return plan ? `Today, focus on: ${plan.action}. ${plan.reason}` : "Start by setting a target role, then add one application, one project, and three proof-backed skills.";
+  }
+  if (lower.includes("ready") || lower.includes("score")) {
+    return `Your current readiness score is ${score}/100. Your role-fit coverage is ${fit.coverage}%. Biggest gap: ${fit.gaps[0]?.name || "make your proof more measurable"}.`;
+  }
+  if (lower.includes("bullet") || lower.includes("resume")) {
+    return "Use action + tool + result. Example: Built Nexus AI using JavaScript, FastAPI, and SQLite to centralize career workflows and generate role-aware next steps.";
+  }
+  if (lower.includes("interview")) {
+    return `Practice a 90-second walkthrough of ${state.projects[0]?.name || "Nexus AI"}: problem, users, technical choices, tradeoffs, result, and next improvement.`;
+  }
+  return `Based on your workspace, the strongest move is to build proof for ${fit.gaps[0]?.name || "your target role"}, keep applications moving, and connect your best project to the role you want.`;
+}
+
+function renderProfileView() {
+  if (!els.profileScore) return;
+  const score = calculateCareerScore();
+  const fit = calculateSkillFit();
+  els.profileScore.textContent = score;
+  els.profileScore.closest(".score-ring").style.setProperty("--score", score);
+  els.profileNameHeading.textContent = state.profile.displayName ? `${state.profile.displayName}'s Career Profile` : "Your Nexus profile";
+  els.profileSummary.textContent = state.profile.targetRole
+    ? `${state.profile.major || "Student"} targeting ${state.profile.targetRole} with ${fit.coverage}% role-fit coverage.`
+    : "Add your target role, major, projects, and skills to build a recruiter-ready profile.";
+  els.profileSnapshot.innerHTML = [
+    ["Target role", state.profile.targetRole || "Not set"],
+    ["Major", state.profile.major || "Not set"],
+    ["Graduation", state.profile.graduation || "Not set"],
+    ["Weekly focus", `${state.profile.weeklyHours || 0} hours`],
+    ["Applications", `${state.applications.length} tracked`],
+    ["Saved paths", `${state.savedRoles.length} saved`]
+  ].map(([label, value]) => `
+    <div class="analytics-item">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </div>
+  `).join("");
+  els.profileProof.innerHTML = [
+    ...state.projects.slice(0, 4).map(project => caseStudyCard(project.name, project.impact || project.stack || "Add a measurable outcome.")),
+    ...state.certifications.slice(0, 2).map(cert => caseStudyCard(cert.name, `${cert.provider} | ${cert.progress}% complete`)),
+    ...state.skills.slice(0, 4).map(skill => caseStudyCard(skill.name, skill.evidence || "Add proof for this skill."))
+  ].join("") || emptyState("Add projects, certifications, and skills to build your proof portfolio.");
+}
+
+async function runAiTool() {
+  const tool = els.aiToolSelect.value;
+  const applicationId = els.aiApplicationSelect.value;
+  const extraContext = els.aiPromptInput.value.trim();
+  const selectedApplication = state.applications.find(item => item.id === applicationId) || null;
+  const payload = {
+    tool,
+    extra_context: extraContext,
+    application: selectedApplication,
+    snapshot: buildAiSnapshot()
+  };
+
+  els.runAiToolButton.disabled = true;
+  els.runAiToolButton.textContent = "Generating...";
+  els.aiProviderLabel.textContent = backendOnline ? "Checking API" : "Local fallback";
+  els.aiOutput.innerHTML = emptyState("Generating guidance...");
+
+  try {
+    let result;
+    if (backendOnline) {
+      result = await apiRequest("/ai/coach", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    } else {
+      result = generateLocalAiResponse(payload);
+    }
+    renderAiResult(result);
+    addActivity(`Ran AI tool: ${tool.replace(/_/g, " ")}`);
+    saveState();
+  } catch (error) {
+    const fallback = generateLocalAiResponse(payload);
+    fallback.provider = "Local fallback after API issue";
+    fallback.note = error.message;
+    renderAiResult(fallback);
+  } finally {
+    els.runAiToolButton.disabled = false;
+    els.runAiToolButton.textContent = "Run AI Tool";
+  }
+}
+
+function buildAiSnapshot() {
+  return {
+    profile: state.profile,
+    applications: state.applications.slice(0, 12),
+    projects: state.projects.slice(0, 8),
+    skills: state.skills.slice(0, 16),
+    certifications: state.certifications.slice(0, 8),
+    networking: state.networking.slice(0, 8),
+    interviews: state.interviews.slice(0, 8),
+    goals: state.goals.slice(0, 8),
+    resume: state.resume,
+    jobAnalyses: state.jobAnalyses.slice(0, 5),
+    chat: state.chat.slice(-8),
+    readinessScore: calculateCareerScore(),
+    skillFit: calculateSkillFit(),
+    weeklyPlan: generateWeeklyPlan()
+  };
+}
+
+function renderAiResult(result) {
+  els.aiProviderLabel.textContent = result.provider || "AI guidance";
+  const sections = Array.isArray(result.sections) ? result.sections : [];
+  els.aiOutput.dataset.lastOutput = sections.map(section => `${section.title}\n${section.body}`).join("\n\n");
+  els.aiOutput.innerHTML = sections.map(section => `
+    <div class="coach-card">
+      <h4>${escapeHtml(section.title)}</h4>
+      <p>${escapeHtml(section.body)}</p>
+    </div>
+  `).join("") || `<div class="coach-card"><p>${escapeHtml(result.text || "No guidance returned.")}</p></div>`;
+  if (result.note) {
+    els.aiOutput.innerHTML += `<div class="empty-state">${escapeHtml(result.note)}</div>`;
+  }
+}
+
+async function copyAiOutput() {
+  const text = els.aiOutput.dataset.lastOutput || els.aiOutput.textContent.trim();
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    els.copyAiOutputButton.textContent = "Copied";
+    setTimeout(() => {
+      els.copyAiOutputButton.textContent = "Copy Output";
+    }, 1400);
+  } catch {
+    downloadFile("nexus-ai-output.txt", text, "text/plain");
+  }
+}
+
+function generateLocalAiResponse(payload) {
+  const snapshot = payload.snapshot;
+  const role = snapshot.profile.targetRole || "your target role";
+  const app = payload.application;
+  const fit = snapshot.skillFit;
+  const strongestProject = snapshot.projects.find(project => project.link && project.impact) || snapshot.projects[0];
+  const missingSkill = fit.gaps[0]?.name || "role-specific proof";
+  const appLabel = app ? `${app.role} at ${app.company}` : role;
+  const common = {
+    provider: "Local fallback",
+    note: "Connect the backend with an OpenAI API key to generate model-written responses."
+  };
+
+  const toolResponses = {
+    resume_review: [
+      ["Overall resume direction", `Aim the resume at ${role}. Lead with Nexus AI or your strongest deployed project, then use bullets that show action, tool, and result.`],
+      ["Strongest proof to feature", strongestProject ? `${strongestProject.name}: ${strongestProject.impact || "add a measurable result so the project proves impact."}` : "Add one deployed project with a GitHub/demo link before applying."],
+      ["Fix first", `Add evidence for ${missingSkill}. Recruiters need proof through a project, certification, class artifact, or work example.`],
+      ["Bullet formula", "Use: Built/Analyzed/Deployed + tool or method + measurable user/workflow result. Keep each bullet to one clear outcome."]
+    ],
+    cover_letter: [
+      ["Opening angle", `I am interested in ${appLabel} because it connects to my work building AI-assisted student career and learning systems.`],
+      ["Evidence paragraph", strongestProject ? `Use ${strongestProject.name} as the main story and explain the problem, technical stack, and outcome.` : "Use Nexus AI as the main story and explain the career workflow problem it solves."],
+      ["Close", "End by naming the specific team need you can support: clean software, data workflows, AI evaluation, or student/user-focused product thinking."]
+    ],
+    interview_prep: [
+      ["Tell me about yourself", `Frame yourself as an Information Systems student building AI, data, and software tools for student decision-making, with ${role} as your current direction.`],
+      ["Project walkthrough", strongestProject ? `Practice explaining ${strongestProject.name}: problem, users, architecture, tradeoffs, result, and what you would improve next.` : "Prepare a Nexus AI walkthrough: problem, users, frontend, backend, data model, AI tools, and next version."],
+      ["Technical questions", `Expect questions about ${missingSkill}, API design, data validation, deployment, and how you test product quality.`],
+      ["Behavioral question", "Prepare a STAR story about improving Nexus after feedback instead of defending the first version."]
+    ],
+    role_fit: [
+      ["Why you match", `Your strongest match signals are ${fit.matched.map(item => item.name).slice(0, 4).join(", ") || "your deployed projects and AI/data experience"}.`],
+      ["Why you may be filtered out", fit.gaps.length ? `Missing or weak proof: ${fit.gaps.map(item => item.name).slice(0, 4).join(", ")}.` : "No major skill gaps detected. Improve proof quality and specificity."],
+      ["Next move", fit.gaps[0]?.action || "Add stronger measurable outcomes to your best project and apply to more matched roles."]
+    ],
+    weekly_plan: generateWeeklyPlan().map((item, index) => [`Priority ${index + 1}: ${item.action}`, `${item.reason} Time: ${item.time}. Due: ${item.due}.`]),
+    networking_message: [
+      ["Message draft", `Hi, I’m Jason, an Information Systems student at UMBC interested in ${role}. I’ve been building Nexus AI, CareerLens, and LearnWise to explore how AI and data can improve student career decisions. I’d appreciate any advice on what skills or project proof matter most for ${appLabel}.`],
+      ["Follow-up angle", "Keep it short, mention one specific project, ask one clear question, and do not ask for a job in the first message."]
+    ]
+  };
+
+  const sections = (toolResponses[payload.tool] || toolResponses.weekly_plan).map(([title, body]) => ({ title, body }));
+  if (payload.extra_context) {
+    sections.push({ title: "Extra context used", body: `You added: ${payload.extra_context.slice(0, 240)}${payload.extra_context.length > 240 ? "..." : ""}` });
+  }
+  return { ...common, sections };
 }
 
 function tableRow(collection, item, cells) {
@@ -1150,8 +2167,77 @@ function tableRow(collection, item, cells) {
 function rowActions(collection, id) {
   return `
     <div class="row-actions">
+      ${collection === "applications" ? `<button class="delete-button" type="button" onclick="selectApplicationDetail('${id}')">Details</button>` : ""}
       <button class="delete-button" type="button" onclick="openEdit('${collection}', '${id}')">Edit</button>
       <button class="delete-button" type="button" onclick="deleteItem('${collection}', '${id}')">Remove</button>
+    </div>
+  `;
+}
+
+function scoreResumeAgainstText(text) {
+  const source = String(text || "").toLowerCase();
+  const resume = `${state.resume} ${state.projects.map(project => `${project.name} ${project.stack} ${project.impact}`).join(" ")} ${state.skills.map(skill => `${skill.name} ${skill.evidence}`).join(" ")}`.toLowerCase();
+  const keywords = extractKeywords(source);
+  const matched = keywords.filter(keyword => resume.includes(keyword.toLowerCase()));
+  const missing = keywords.filter(keyword => !resume.includes(keyword.toLowerCase()));
+  const proofBonus = Math.min(state.projects.filter(project => project.link).length * 4, 16);
+  const score = keywords.length ? Math.min(98, Math.round((matched.length / keywords.length) * 78 + proofBonus)) : calculateSkillFit().coverage;
+  return {
+    score,
+    matched,
+    missing,
+    keywords,
+    summary: matched.length
+      ? `Matched ${matched.slice(0, 5).join(", ")}. Strengthen missing proof for ${missing.slice(0, 4).join(", ") || "the most role-specific outcomes"}.`
+      : "Add more role keywords, project proof, and measurable outcomes to improve match quality."
+  };
+}
+
+function extractKeywords(text) {
+  const bank = [
+    "Python", "JavaScript", "TypeScript", "React", "SQL", "FastAPI", "APIs", "SQLite", "PostgreSQL",
+    "Power BI", "Excel", "Data Analysis", "Data Visualization", "Machine Learning", "Statistics",
+    "Generative AI", "LLM Evaluation", "Prompt Engineering", "AI Model Evaluation", "Testing",
+    "QA", "Documentation", "Cloud", "Security", "Networking", "User Research", "Product",
+    "Agile", "Systems Analysis", "Business Analysis", "Communication", "Troubleshooting"
+  ];
+  const lower = String(text || "").toLowerCase();
+  const found = bank.filter(term => lower.includes(term.toLowerCase()));
+  if (found.length >= 6) return found;
+  const inferred = lower
+    .replace(/[^a-z0-9+#\s]/g, " ")
+    .split(/\s+/)
+    .filter(word => word.length > 4 && !["intern", "student", "experience", "required", "preferred", "skills", "ability", "working"].includes(word))
+    .slice(0, 12)
+    .map(word => word.replace(/^\w/, letter => letter.toUpperCase()));
+  return [...new Set([...found, ...inferred])].slice(0, 14);
+}
+
+function strongestProjectLine() {
+  const project = state.projects.find(item => item.link && item.impact) || state.projects[0];
+  if (!project) return "Add one project with a public link and a result statement before applying.";
+  return `${project.name}: ${project.impact || "add the result this project created."}`;
+}
+
+function renderReadinessTimeline() {
+  const base = calculateCareerScore();
+  const points = [
+    { label: "Start", value: Math.max(4, base - 24), note: "Workspace created" },
+    { label: "Profile", value: Math.max(8, base - 18 + (state.profile.targetRole ? 8 : 0)), note: state.profile.targetRole ? "Target role set" : "Target role missing" },
+    { label: "Proof", value: Math.max(12, base - 10 + Math.min(state.projects.length * 3, 10)), note: `${state.projects.length} projects tracked` },
+    { label: "Pipeline", value: Math.max(16, base - 4 + Math.min(state.applications.length * 2, 8)), note: `${state.applications.length} applications` },
+    { label: "Today", value: base, note: `${base}/100 readiness` }
+  ].map(item => ({ ...item, value: clamp(Math.round(item.value), 0, 100) }));
+  return `
+    <div class="timeline-bars">
+      ${points.map(item => `
+        <div class="timeline-bar-item">
+          <span>${escapeHtml(item.label)}</span>
+          <div class="timeline-bar"><div style="height:${item.value}%; width:${item.value}%"></div></div>
+          <strong>${item.value}</strong>
+          <small>${escapeHtml(item.note)}</small>
+        </div>
+      `).join("")}
     </div>
   `;
 }
@@ -1159,7 +2245,7 @@ function rowActions(collection, id) {
 function calculateCareerScore() {
   const profile = state.profile.targetRole && state.profile.major ? 10 : 0;
   const apps = Math.min(state.applications.length * 4, 20);
-  const interviews = Math.min(state.applications.filter(app => ["Interview", "Offer"].includes(app.status)).length * 6, 12);
+  const interviews = Math.min(state.applications.filter(app => ["Interviewing", "Offer"].includes(app.status)).length * 6, 12);
   const projects = Math.min(state.projects.filter(project => project.stage === "Published").length * 10, 22);
   const certs = Math.min(state.certifications.reduce((sum, cert) => sum + Number(cert.progress || 0), 0) / 10, 16);
   const network = Math.min(state.networking.length * 4, 12);
@@ -1275,7 +2361,7 @@ function getReadinessSummary(score) {
 function generateCoachCards() {
   const cards = [];
   const activeApps = state.applications.filter(app => !["Rejected", "Offer"].includes(app.status));
-  const interviews = state.applications.filter(app => app.status === "Interview");
+  const interviews = state.applications.filter(app => app.status === "Interviewing");
   const publishedProjects = state.projects.filter(project => project.stage === "Published");
   const role = state.profile.targetRole || "your target role";
   const lowCert = state.certifications.find(item => Number(item.progress || 0) < 50);
@@ -1514,7 +2600,7 @@ function generateResumeCoach() {
 }
 
 function generateAnalytics() {
-  const appsByStatus = ["Wishlist", "Applied", "Interview", "Offer", "Rejected"]
+  const appsByStatus = ["Saved", "Applied", "Interviewing", "Offer", "Rejected", "Follow-up needed", "Deadline approaching"]
     .map(status => `${status}: ${state.applications.filter(app => app.status === status).length}`)
     .join(" | ");
   const avgCert = state.certifications.length
@@ -1713,7 +2799,9 @@ async function loadSampleWorkspace() {
 
 function switchView(view) {
   const titles = {
-    dashboard: "Nexus AI",
+    dashboard: "Find Roles. Track Progress. Move Next.",
+    explore: "Explore Roles",
+    jobBoard: "Job Board",
     applications: "Applications",
     certifications: "Certifications",
     projects: "Projects",
@@ -1721,6 +2809,8 @@ function switchView(view) {
     interviews: "Interview Prep",
     skills: "Skills Lab",
     resume: "Resume Builder",
+    aiTools: "AI Career Tools",
+    profile: "Student Profile",
     goals: "Career Goals",
     onboarding: "Onboarding",
     caseStudy: "Case Study"

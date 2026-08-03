@@ -17,7 +17,7 @@ def seed() -> None:
             ("skills", ("id", "name", "category", "level", "evidence"), ("skill-ai", "Generative AI", "AI", 78, "Nexus AI, CareerLens, LearnWise")),
             ("projects", ("id", "name", "stack", "stage", "link", "impact"), ("project-nexus", "Nexus AI", "HTML, CSS, JavaScript, FastAPI, SQLite", "Improving", "https://github.com/jasonbinong/Nexus-AI", "Career operating system with readiness analytics")),
             ("certifications", ("id", "name", "provider", "progress", "target", "link"), ("cert-oci", "Oracle Cloud Foundations", "Oracle", 100, "2026-06-01", "")),
-            ("applications", ("id", "company", "role", "status", "deadline", "link", "notes"), ("app-sample", "Sample Company", "Data Analyst Intern", "Wishlist", "2026-08-01", "", "Tailor resume and add SQL project evidence")),
+            ("applications", ("id", "company", "role", "status", "deadline", "link", "notes"), ("app-sample", "Sample Company", "Data Analyst Intern", "Saved", "2026-08-01", "", "Tailor resume and add SQL project evidence")),
             ("goals", ("id", "goal", "category", "progress", "due", "next_step"), ("goal-backend", "Build backend/database project", "Technical growth", 45, "2026-07-15", "Connect API to frontend")),
         ]
         for table, columns, values in rows:

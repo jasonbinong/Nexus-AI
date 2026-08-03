@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=ibm-builders-1">
+  <link rel="stylesheet" href="styles.css?v=all-tools-1">
 </head>
 <body>
   <main class="app-shell">
@@ -22,6 +22,8 @@
 
       <nav class="nav-list" aria-label="Workspace sections">
         <button class="nav-item active" type="button" data-view="dashboard">Dashboard</button>
+        <button class="nav-item" type="button" data-view="explore">Explore Roles</button>
+        <button class="nav-item" type="button" data-view="jobBoard">Job Board</button>
         <button class="nav-item" type="button" data-view="applications">Applications</button>
         <button class="nav-item" type="button" data-view="certifications">Certifications</button>
         <button class="nav-item" type="button" data-view="projects">Projects</button>
@@ -29,6 +31,8 @@
         <button class="nav-item" type="button" data-view="interviews">Interviews</button>
         <button class="nav-item" type="button" data-view="skills">Skills Lab</button>
         <button class="nav-item" type="button" data-view="resume">Resume</button>
+        <button class="nav-item" type="button" data-view="aiTools">AI Tools</button>
+        <button class="nav-item" type="button" data-view="profile">Profile</button>
         <button class="nav-item" type="button" data-view="goals">Goals</button>
         <button class="nav-item" type="button" data-view="onboarding">Onboarding</button>
         <button class="nav-item" type="button" data-view="caseStudy">Case Study</button>
@@ -40,8 +44,8 @@
         <div>
           <p class="eyebrow">Career intelligence workspace</p>
           <h2 id="viewTitle">Nexus AI</h2>
-          <p class="header-copy">Connect applications, projects, certifications, networking, and goals into one career system.</p>
-          <p class="privacy-note">New users start with a blank workspace. Demo data only appears if you choose to load it.</p>
+          <p class="header-copy">Find roles, track applications, build proof, and turn career prep into a weekly plan.</p>
+          <p class="privacy-note">Blank by default. Demo data is optional.</p>
         </div>
         <div class="header-actions">
           <span class="sync-pill" id="syncStatus">Local mode</span>
@@ -194,9 +198,18 @@
             <div class="schema-preview" id="schemaPreview"></div>
           </article>
         </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <h3>Readiness Timeline</h3>
+            <span>Progress signals</span>
+          </div>
+          <div class="timeline-chart" id="readinessTimeline"></div>
+        </section>
       </section>
 
       <section class="view" id="applicationsView">
+        <div class="dashboard-grid app-detail-grid">
         <article class="panel">
           <div class="panel-heading">
             <h3>Internship Application Tracker</h3>
@@ -206,22 +219,26 @@
             <input id="applicationSearch" placeholder="Search applications">
             <select id="applicationFilter">
               <option value="all">All statuses</option>
-              <option>Wishlist</option>
+              <option>Saved</option>
               <option>Applied</option>
-              <option>Interview</option>
+              <option>Interviewing</option>
               <option>Offer</option>
               <option>Rejected</option>
+              <option>Follow-up needed</option>
+              <option>Deadline approaching</option>
             </select>
           </div>
           <form class="entry-form" id="applicationForm">
             <input name="company" placeholder="Company" required>
             <input name="role" placeholder="Role" required>
             <select name="status">
-              <option>Wishlist</option>
+              <option>Saved</option>
               <option>Applied</option>
-              <option>Interview</option>
+              <option>Interviewing</option>
               <option>Offer</option>
               <option>Rejected</option>
+              <option>Follow-up needed</option>
+              <option>Deadline approaching</option>
             </select>
             <input name="deadline" type="date" required>
             <input name="link" placeholder="Posting link">
@@ -230,6 +247,97 @@
           </form>
           <div class="table-list" id="applicationsList"></div>
         </article>
+        <article class="panel">
+          <div class="panel-heading">
+            <h3>Application Detail</h3>
+            <span id="applicationDetailLabel">Select a role</span>
+          </div>
+          <div class="application-detail" id="applicationDetail"></div>
+        </article>
+        </div>
+      </section>
+
+      <section class="view" id="exploreView">
+        <section class="market-hero">
+          <div>
+            <p class="eyebrow">Career marketplace</p>
+            <h3>Explore roles, compare fit, and save opportunities into your pipeline.</h3>
+            <p>Nexus ranks career paths from your target role, skills, projects, certifications, and resume evidence so you know what to pursue next.</p>
+          </div>
+          <div class="market-search">
+            <label>
+              Search roles
+              <input id="roleSearch" placeholder="AI, data, software, cloud">
+            </label>
+            <label>
+              Career cluster
+              <select id="roleClusterFilter">
+                <option value="all">All clusters</option>
+                <option value="AI">AI</option>
+                <option value="Data">Data</option>
+                <option value="Software">Software</option>
+                <option value="Cloud">Cloud</option>
+                <option value="Cybersecurity">Cybersecurity</option>
+                <option value="Product">Product</option>
+                <option value="UX">UX</option>
+                <option value="Business">Business</option>
+                <option value="IT">IT</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="role-grid" id="roleExplorer"></section>
+
+        <section class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Recommended Opportunities</h3>
+              <span>Save directly to applications</span>
+            </div>
+            <div class="opportunity-list" id="opportunityList"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Path Builder</h3>
+              <span>Role-specific next steps</span>
+            </div>
+            <div class="action-plan-list" id="pathBuilder"></div>
+          </article>
+        </section>
+      </section>
+
+      <section class="view" id="jobBoardView">
+        <section class="market-hero">
+          <div>
+            <p class="eyebrow">Saved job board</p>
+            <h3>Browse opportunity templates and save the strongest matches to your pipeline.</h3>
+            <p>This board is a functional career-search layer for Nexus. It uses role fit, skill proof, deadlines, and application status to recommend where to focus.</p>
+          </div>
+          <div class="market-search">
+            <label>
+              Search opportunities
+              <input id="jobBoardSearch" placeholder="Software, AI, data, cloud">
+            </label>
+            <label>
+              Cluster
+              <select id="jobBoardCluster">
+                <option value="all">All clusters</option>
+                <option value="AI">AI</option>
+                <option value="Data">Data</option>
+                <option value="Software">Software</option>
+                <option value="Cloud">Cloud</option>
+                <option value="Cybersecurity">Cybersecurity</option>
+                <option value="Product">Product</option>
+                <option value="UX">UX</option>
+                <option value="Business">Business</option>
+                <option value="IT">IT</option>
+              </select>
+            </label>
+          </div>
+        </section>
+        <section class="job-board-grid" id="jobBoardList"></section>
       </section>
 
       <section class="view" id="certificationsView">
@@ -377,6 +485,117 @@
             <div class="coach-list" id="resumeCoach"></div>
           </article>
         </div>
+        <article class="panel">
+          <div class="panel-heading">
+            <h3>Resume Bullet Builder</h3>
+            <span>Action + tool + result</span>
+          </div>
+          <form class="entry-form bullet-form" id="bulletBuilderForm">
+            <input name="action" placeholder="Action verb, e.g. Built" required>
+            <input name="tool" placeholder="Tool or method, e.g. FastAPI + SQLite" required>
+            <input name="project" placeholder="Project or workflow" required>
+            <input name="result" placeholder="Measurable result or user impact" required>
+            <button class="primary-button" type="submit">Build Bullet</button>
+          </form>
+          <div class="bullet-output" id="bulletOutput"></div>
+        </article>
+      </section>
+
+      <section class="view" id="aiToolsView">
+        <section class="market-hero">
+          <div>
+            <p class="eyebrow">AI career tools</p>
+            <h3>Get role-aware feedback on your resume, interviews, applications, and weekly plan.</h3>
+            <p>Nexus uses your saved profile, applications, projects, skills, and resume notes to produce explainable career guidance. No data is sent to an AI provider unless you click a tool.</p>
+          </div>
+          <div class="market-search">
+            <label>
+              Tool
+              <select id="aiToolSelect">
+                <option value="resume_review">Resume Review</option>
+                <option value="cover_letter">Cover Letter Draft</option>
+                <option value="interview_prep">Interview Practice</option>
+                <option value="role_fit">Explain Role Fit</option>
+                <option value="weekly_plan">Weekly Career Plan</option>
+                <option value="networking_message">Networking Message</option>
+              </select>
+            </label>
+            <label>
+              Saved application
+              <select id="aiApplicationSelect"></select>
+            </label>
+          </div>
+        </section>
+
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Job Description Analyzer</h3>
+              <span id="jdScoreLabel">Paste a role</span>
+            </div>
+            <textarea id="jobDescriptionInput" placeholder="Paste a job description here. Nexus will extract skills, keywords, resume gaps, and interview topics."></textarea>
+            <div class="button-row">
+              <button class="primary-button" id="analyzeJobButton" type="button">Analyze Job</button>
+              <button class="secondary-button" id="saveAnalyzedJobButton" type="button">Save As Application</button>
+            </div>
+            <div class="jd-output" id="jobAnalysisOutput"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>AI Output</h3>
+              <span id="aiProviderLabel">Local fallback ready</span>
+            </div>
+            <textarea id="aiPromptInput" placeholder="Paste a resume bullet, interview focus, or any extra context you want Nexus to use."></textarea>
+            <div class="button-row">
+              <button class="primary-button" id="runAiToolButton" type="button">Run AI Tool</button>
+              <button class="secondary-button" id="copyAiOutputButton" type="button">Copy Output</button>
+            </div>
+            <div class="ai-output" id="aiOutput"></div>
+          </article>
+        </div>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <h3>AI Chat Coach</h3>
+            <span>Uses workspace context</span>
+          </div>
+          <div class="chat-thread" id="chatThread"></div>
+          <form class="chat-form" id="chatCoachForm">
+            <input name="message" placeholder="Ask Nexus what to do today, how to improve a bullet, or how ready you are." required>
+            <button class="primary-button" type="submit">Send</button>
+          </form>
+        </article>
+      </section>
+
+      <section class="view" id="profileView">
+        <section class="profile-hero panel">
+          <div>
+            <p class="eyebrow">Student profile</p>
+            <h3 id="profileNameHeading">Your Nexus profile</h3>
+            <p id="profileSummary">Add your profile, target role, skills, and project proof to build a recruiter-ready career profile.</p>
+          </div>
+          <div class="score-ring">
+            <span id="profileScore">0</span>
+            <small>/100</small>
+          </div>
+        </section>
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Profile Snapshot</h3>
+              <span>Career identity</span>
+            </div>
+            <div class="profile-snapshot" id="profileSnapshot"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Proof Portfolio</h3>
+              <span>Recruiter evidence</span>
+            </div>
+            <div class="profile-proof" id="profileProof"></div>
+          </article>
+        </div>
       </section>
 
       <section class="view" id="goalsView">
@@ -405,7 +624,15 @@
               <span>Build a workspace in 2 minutes</span>
             </div>
             <form class="entry-form onboarding-form" id="onboardingForm">
-              <input name="targetRole" placeholder="Target role" required>
+              <select name="targetRole" required>
+                <option value="">Select a target role</option>
+                <option>AI Data Analyst Intern</option>
+                <option>Software Engineering Intern</option>
+                <option>Business Intelligence Intern</option>
+                <option>Product Analyst Intern</option>
+                <option>Cloud / Systems Intern</option>
+                <option>AI Product Builder</option>
+              </select>
               <input name="major" placeholder="Major" required>
               <input name="graduation" placeholder="Graduation year or term" required>
               <input name="weeklyHours" type="number" min="0" max="80" placeholder="Weekly focus hours" required>
@@ -511,6 +738,6 @@
     </form>
   </dialog>
 
-    <script src="app.js?v=ibm-builders-1"></script>
+    <script src="app.js?v=all-tools-1"></script>
 </body>
 </html>

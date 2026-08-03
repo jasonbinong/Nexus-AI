@@ -22,7 +22,7 @@ CREATE TABLE applications (
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   company TEXT NOT NULL,
   role TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('Wishlist', 'Applied', 'Interview', 'Offer', 'Rejected')),
+  status TEXT NOT NULL CHECK (status IN ('Saved', 'Applied', 'Interviewing', 'Offer', 'Rejected', 'Follow-up needed', 'Deadline approaching')),
   deadline DATE,
   link TEXT,
   notes TEXT,

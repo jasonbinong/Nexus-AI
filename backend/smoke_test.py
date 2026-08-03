@@ -29,7 +29,7 @@ def main() -> None:
         INSERT INTO applications (id, company, role, status, deadline, notes)
         VALUES (?, ?, ?, ?, ?, ?)
         """,
-        ("app-1", "DoorDash", "AI Research Fellow", "Wishlist", "2026-07-15", "Upload proposal"),
+        ("app-1", "DoorDash", "AI Research Fellow", "Saved", "2026-07-15", "Upload proposal"),
     )
     conn.execute(
         """

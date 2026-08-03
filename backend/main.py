@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import json
+import urllib.error
+import urllib.request
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -96,6 +99,13 @@ class CollectionItem(BaseModel):
     next_step: str | None = None
 
 
+class AiCoachRequest(BaseModel):
+    tool: str = "resume_review"
+    extra_context: str = ""
+    application: dict[str, Any] | None = None
+    snapshot: dict[str, Any] = Field(default_factory=dict)
+
+
 app = FastAPI(
     title="Nexus AI Backend",
     description="SQLite-backed API for the Nexus AI student career operating system.",
@@ -108,6 +118,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+AI_TOOL_LABELS = {
+    "resume_review": "Resume Review",
+    "cover_letter": "Cover Letter Draft",
+    "interview_prep": "Interview Practice",
+    "role_fit": "Role Fit Explanation",
+    "weekly_plan": "Weekly Career Plan",
+    "networking_message": "Networking Message",
+}
 
 
 def now() -> str:
@@ -131,6 +150,7 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
         conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
     else:
         migrate_profile_columns(conn)
+        migrate_application_statuses(conn)
 
 
 def migrate_profile_columns(conn: sqlite3.Connection) -> None:
@@ -145,6 +165,45 @@ def migrate_profile_columns(conn: sqlite3.Connection) -> None:
     for column, statement in migrations.items():
         if column not in columns:
             conn.execute(statement)
+
+
+def migrate_application_statuses(conn: sqlite3.Connection) -> None:
+    table = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'applications'"
+    ).fetchone()
+    if not table or "Wishlist" not in table["sql"] or "Interviewing" in table["sql"]:
+        return
+
+    conn.execute("ALTER TABLE applications RENAME TO applications_legacy")
+    conn.executescript(
+        """
+        CREATE TABLE applications (
+          id TEXT PRIMARY KEY,
+          company TEXT NOT NULL,
+          role TEXT NOT NULL,
+          status TEXT NOT NULL CHECK (status IN ('Saved', 'Applied', 'Interviewing', 'Offer', 'Rejected', 'Follow-up needed', 'Deadline approaching')),
+          deadline TEXT,
+          link TEXT,
+          notes TEXT,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO applications (id, company, role, status, deadline, link, notes, created_at, updated_at)
+        SELECT id, company, role,
+          CASE
+            WHEN status = 'Wishlist' THEN 'Saved'
+            WHEN status = 'Interview' THEN 'Interviewing'
+            ELSE status
+          END,
+          deadline, link, notes, created_at, updated_at
+        FROM applications_legacy
+        """
+    )
+    conn.execute("DROP TABLE applications_legacy")
 
 
 def init_db() -> None:
@@ -289,6 +348,128 @@ def build_career_report(snapshot: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def fallback_ai_sections(request: AiCoachRequest) -> dict[str, Any]:
+    snapshot = request.snapshot or {}
+    profile = snapshot.get("profile") or {}
+    role = profile.get("targetRole") or profile.get("target_role") or "the student's target role"
+    application = request.application or {}
+    app_label = (
+        f"{application.get('role', 'the saved role')} at {application.get('company', 'the selected company')}"
+        if application
+        else role
+    )
+    projects = snapshot.get("projects") or []
+    skills = snapshot.get("skills") or []
+    skill_fit = snapshot.get("skillFit") or {}
+    gaps = skill_fit.get("gaps") or []
+    matched = skill_fit.get("matched") or []
+    strongest_project = next((item for item in projects if item.get("link") and item.get("impact")), projects[0] if projects else {})
+    gap_name = (gaps[0] or {}).get("name") if gaps and isinstance(gaps[0], dict) else "role-specific proof"
+    project_name = strongest_project.get("name") or "Nexus AI"
+    project_impact = strongest_project.get("impact") or "Add a measurable impact statement to make this proof stronger."
+
+    options = {
+        "resume_review": [
+            ("Resume direction", f"Target the resume toward {role}. Lead with deployed AI/data/software projects and remove skills that are not backed by proof."),
+            ("Best evidence", f"Feature {project_name}: {project_impact}"),
+            ("First improvement", f"Add stronger proof for {gap_name}. Use action + tool + result in every project bullet."),
+        ],
+        "cover_letter": [
+            ("Opening", f"Connect your interest in {app_label} to building AI-assisted career and learning systems for students."),
+            ("Proof paragraph", f"Use {project_name} as the central example, then explain the problem, stack, and outcome."),
+            ("Close", "End with the specific value you can bring: clean software, AI evaluation, data workflows, or student-centered product thinking."),
+        ],
+        "interview_prep": [
+            ("Project story", f"Practice explaining {project_name}: problem, user, architecture, tradeoffs, result, and next improvement."),
+            ("Technical practice", f"Prepare for questions about {gap_name}, API design, data validation, testing, and deployment."),
+            ("Behavioral story", "Use a STAR answer about accepting feedback and improving Nexus from a demo into a stronger product."),
+        ],
+        "role_fit": [
+            ("Match signals", f"Strongest current signals: {', '.join(str(item.get('name', item)) for item in matched[:5]) or 'deployed projects, AI/data experience, and career-product focus'}."),
+            ("Risk signals", f"Weakest current signals: {', '.join(str(item.get('name', item)) for item in gaps[:5]) or 'make outcomes more measurable and role-specific'}."),
+            ("Next move", f"Build or document proof for {gap_name}, then save one matched opportunity into the pipeline."),
+        ],
+        "weekly_plan": [
+            ("Monday", "Save or apply to two matched roles and add deadlines for each."),
+            ("Wednesday", f"Improve {project_name} proof with a clearer README, screenshot, or result statement."),
+            ("Friday", "Send two networking messages and practice one project walkthrough."),
+        ],
+        "networking_message": [
+            ("Message draft", f"Hi, I’m Jason, an Information Systems student at UMBC interested in {role}. I’ve been building Nexus AI and other student-focused AI/data tools, and I’d appreciate any advice on what project proof matters most for {app_label}."),
+            ("Why it works", "It is specific, short, and asks for advice instead of immediately asking for a job."),
+        ],
+    }
+    sections = [{"title": title, "body": body} for title, body in options.get(request.tool, options["resume_review"])]
+    if request.extra_context:
+        sections.append({"title": "Extra context considered", "body": request.extra_context[:500]})
+    return {
+        "provider": "Local fallback",
+        "sections": sections,
+        "note": "Set OPENAI_API_KEY on the backend to enable model-generated coaching.",
+    }
+
+
+def call_openai_ai_coach(request: AiCoachRequest) -> dict[str, Any]:
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        return fallback_ai_sections(request)
+
+    model = os.getenv("NEXUS_AI_MODEL", "gpt-5").strip() or "gpt-5"
+    tool_label = AI_TOOL_LABELS.get(request.tool, request.tool.replace("_", " ").title())
+    user_payload = {
+        "tool": tool_label,
+        "extra_context": request.extra_context[:3000],
+        "selected_application": request.application,
+        "workspace_snapshot": request.snapshot,
+    }
+    prompt = (
+        "You are Nexus AI, a practical career coach for college students. "
+        "Use the student's workspace data to produce specific, honest, role-aware guidance. "
+        "Do not promise jobs or invent credentials. Avoid sending overly personal content. "
+        "Return only JSON with this shape: "
+        '{"provider":"OpenAI","sections":[{"title":"short heading","body":"specific guidance"}],"note":""}. '
+        "Create 3 to 6 sections. Keep each body under 90 words.\n\n"
+        f"Request data:\n{json.dumps(user_payload, ensure_ascii=False)}"
+    )
+    body = json.dumps({"model": model, "input": prompt}).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/responses",
+        data=body,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError) as exc:
+        fallback = fallback_ai_sections(request)
+        fallback["provider"] = "Local fallback after AI API issue"
+        fallback["note"] = f"AI API unavailable: {exc}"
+        return fallback
+
+    output_text = data.get("output_text", "")
+    if not output_text:
+        for item in data.get("output", []):
+            for content in item.get("content", []):
+                if content.get("type") in {"output_text", "text"} and content.get("text"):
+                    output_text += content["text"]
+    try:
+        parsed = json.loads(output_text)
+        if isinstance(parsed.get("sections"), list):
+            parsed["provider"] = parsed.get("provider") or "OpenAI"
+            return parsed
+    except json.JSONDecodeError:
+        pass
+    return {
+        "provider": "OpenAI",
+        "sections": [{"title": tool_label, "body": output_text[:1200] or "The AI response did not include text."}],
+        "note": "",
+    }
+
+
 def build_snapshot() -> dict[str, Any]:
     with connect() as conn:
         profile = row_to_dict(conn.execute("SELECT display_name, email, target_role, major, graduation, weekly_hours FROM profiles WHERE id = 1").fetchone())
@@ -377,6 +558,11 @@ def readiness() -> dict[str, Any]:
 @app.get("/workspace/report")
 def workspace_report() -> dict[str, Any]:
     return build_career_report(build_snapshot())
+
+
+@app.post("/ai/coach")
+def ai_coach(request: AiCoachRequest) -> dict[str, Any]:
+    return call_openai_ai_coach(request)
 
 
 @app.delete("/workspace/reset", status_code=204)

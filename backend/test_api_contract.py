@@ -39,7 +39,7 @@ def test_full_workspace_flow():
         json={
             "company": "DoorDash",
             "role": "AI Research Fellow",
-            "status": "Wishlist",
+            "status": "Saved",
             "deadline": "2026-07-15",
             "link": "",
             "notes": "Upload research proposal",
@@ -50,10 +50,10 @@ def test_full_workspace_flow():
 
     update_response = client.put(
         f"/applications/{application_id}",
-        json={"status": "Applied", "notes": "Submitted application"},
+        json={"status": "Interviewing", "notes": "Submitted application and scheduled screen"},
     )
     assert update_response.status_code == 200
-    assert update_response.json()["status"] == "Applied"
+    assert update_response.json()["status"] == "Interviewing"
 
     skill_response = client.post(
         "/skills",

@@ -18,6 +18,7 @@ This folder adds a working backend/database layer to Nexus AI. It uses FastAPI a
 - Target-role skill gap analysis
 - Health metadata for deployment checks
 - Workspace import and reset flows
+- AI career tools for resume review, cover letters, interview prep, role fit, weekly plans, and networking messages
 - Self-healing SQLite schema initialization before endpoint operations
 
 ## Run Locally
@@ -68,7 +69,7 @@ curl http://127.0.0.1:8000/analytics/readiness
 ```bash
 curl -X POST http://127.0.0.1:8000/applications ^
   -H "Content-Type: application/json" ^
-  -d "{\"company\":\"DoorDash\",\"role\":\"AI Research Fellow\",\"status\":\"Wishlist\",\"deadline\":\"2026-07-15\",\"link\":\"\",\"notes\":\"Upload research proposal\"}"
+  -d "{\"company\":\"DoorDash\",\"role\":\"AI Research Fellow\",\"status\":\"Saved\",\"deadline\":\"2026-07-15\",\"link\":\"\",\"notes\":\"Upload research proposal\"}"
 ```
 
 ## Endpoint Reference
@@ -84,6 +85,7 @@ curl -X POST http://127.0.0.1:8000/applications ^
 | `POST` | `/{collection}` | Collection fields | Created record |
 | `PUT` | `/{collection}/{item_id}` | Editable collection fields | Updated record |
 | `DELETE` | `/{collection}/{item_id}` | None | `204 No Content` |
+| `POST` | `/ai/coach` | `tool`, `snapshot`, optional `application`, `extra_context` | AI career coaching response |
 | `POST` | `/workspace/import` | Nexus JSON snapshot | Imported workspace snapshot |
 | `DELETE` | `/workspace/reset` | None | `204 No Content` |
 
@@ -98,6 +100,15 @@ applications, certifications, projects, skills, networking, interviews, goals
 The database is created at `backend/nexus.db` by default. Set `NEXUS_DB_PATH` to use another location.
 
 The schema is in `schema.sql` and is designed around the same entities used by the frontend dashboard.
+
+## AI Configuration
+
+The `/ai/coach` endpoint works without an API key by returning local fallback guidance. To enable model-generated responses, set:
+
+```text
+OPENAI_API_KEY=your_api_key_here
+NEXUS_AI_MODEL=gpt-5
+```
 
 ## Verify The Database Schema
 
