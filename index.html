@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=all-tools-1">
+  <link rel="stylesheet" href="styles.css?v=grouped-nav-1">
 </head>
 <body>
   <main class="app-shell">
@@ -20,22 +20,55 @@
         </div>
       </div>
 
-      <nav class="nav-list" aria-label="Workspace sections">
-        <button class="nav-item active" type="button" data-view="dashboard">Dashboard</button>
-        <button class="nav-item" type="button" data-view="explore">Explore Roles</button>
-        <button class="nav-item" type="button" data-view="jobBoard">Job Board</button>
-        <button class="nav-item" type="button" data-view="applications">Applications</button>
-        <button class="nav-item" type="button" data-view="certifications">Certifications</button>
-        <button class="nav-item" type="button" data-view="projects">Projects</button>
-        <button class="nav-item" type="button" data-view="networking">Networking</button>
-        <button class="nav-item" type="button" data-view="interviews">Interviews</button>
-        <button class="nav-item" type="button" data-view="skills">Skills Lab</button>
-        <button class="nav-item" type="button" data-view="resume">Resume</button>
-        <button class="nav-item" type="button" data-view="aiTools">AI Tools</button>
-        <button class="nav-item" type="button" data-view="profile">Profile</button>
-        <button class="nav-item" type="button" data-view="goals">Goals</button>
-        <button class="nav-item" type="button" data-view="onboarding">Onboarding</button>
-        <button class="nav-item" type="button" data-view="caseStudy">Case Study</button>
+      <nav class="nav-list grouped-nav" aria-label="Workspace sections">
+        <button class="nav-item active" type="button" data-view="dashboard" data-nav-root="dashboard">Dashboard</button>
+
+        <details class="nav-group" data-nav-group="explore">
+          <summary>Explore</summary>
+          <div class="nav-menu">
+            <button class="nav-item" type="button" data-view="explore" data-nav-root="explore">Explore Roles</button>
+            <button class="nav-item" type="button" data-view="jobBoard" data-nav-root="explore">Job Board</button>
+          </div>
+        </details>
+
+        <details class="nav-group" data-nav-group="pipeline">
+          <summary>Pipeline</summary>
+          <div class="nav-menu">
+            <button class="nav-item" type="button" data-view="applications" data-nav-root="pipeline">Applications</button>
+            <button class="nav-item" type="button" data-view="networking" data-nav-root="pipeline">Networking</button>
+            <button class="nav-item" type="button" data-view="interviews" data-nav-root="pipeline">Interviews</button>
+            <button class="nav-item" type="button" data-view="goals" data-nav-root="pipeline">Goals</button>
+          </div>
+        </details>
+
+        <details class="nav-group" data-nav-group="proof">
+          <summary>Proof</summary>
+          <div class="nav-menu">
+            <button class="nav-item" type="button" data-view="projects" data-nav-root="proof">Projects</button>
+            <button class="nav-item" type="button" data-view="certifications" data-nav-root="proof">Certifications</button>
+            <button class="nav-item" type="button" data-view="skills" data-nav-root="proof">Skills Lab</button>
+            <button class="nav-item" type="button" data-view="resume" data-nav-root="proof">Resume</button>
+          </div>
+        </details>
+
+        <details class="nav-group" data-nav-group="ai">
+          <summary>AI Coach</summary>
+          <div class="nav-menu">
+            <button class="nav-item" type="button" data-view="aiTools" data-nav-root="ai">AI Tools</button>
+            <button class="nav-item" type="button" data-view="resume" data-nav-root="ai">Resume Review</button>
+            <button class="nav-item" type="button" data-view="applications" data-nav-root="ai">Role Match</button>
+          </div>
+        </details>
+
+        <button class="nav-item" type="button" data-view="profile" data-nav-root="profile">Profile</button>
+
+        <details class="nav-group" data-nav-group="more">
+          <summary>More</summary>
+          <div class="nav-menu">
+            <button class="nav-item" type="button" data-view="onboarding" data-nav-root="more">Onboarding</button>
+            <button class="nav-item" type="button" data-view="caseStudy" data-nav-root="more">Case Study</button>
+          </div>
+        </details>
       </nav>
     </aside>
 
@@ -738,6 +771,6 @@
     </form>
   </dialog>
 
-    <script src="app.js?v=all-tools-1"></script>
+    <script src="app.js?v=grouped-nav-1"></script>
 </body>
 </html>

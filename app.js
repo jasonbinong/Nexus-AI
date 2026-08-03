@@ -335,6 +335,7 @@ let latestGeneratedBullet = "";
 
 const els = {
   navItems: [...document.querySelectorAll(".nav-item")],
+  navGroups: [...document.querySelectorAll(".nav-group")],
   views: [...document.querySelectorAll(".view")],
   viewTitle: document.querySelector("#viewTitle"),
   exportButton: document.querySelector("#exportButton"),
@@ -459,7 +460,14 @@ els.roleClusterFilter.addEventListener("change", renderExplore);
 els.jobBoardSearch.addEventListener("input", renderJobBoard);
 els.jobBoardCluster.addEventListener("change", renderJobBoard);
 els.editForm.addEventListener("submit", saveEdit);
-els.navItems.forEach(item => item.addEventListener("click", () => switchView(item.dataset.view)));
+els.navItems.forEach(item => item.addEventListener("click", () => {
+  switchView(item.dataset.view);
+  item.closest(".nav-group")?.removeAttribute("open");
+}));
+document.addEventListener("click", event => {
+  if (event.target.closest(".nav-group")) return;
+  els.navGroups.forEach(group => group.removeAttribute("open"));
+});
 
 const roleRequirements = {
   "data analyst": ["SQL", "Excel", "Power BI", "Data Analysis", "Statistics", "Communication"],
@@ -2818,6 +2826,10 @@ function switchView(view) {
 
   currentView = view;
   els.navItems.forEach(item => item.classList.toggle("active", item.dataset.view === view));
+  els.navGroups.forEach(group => {
+    const isActive = [...group.querySelectorAll(".nav-item")].some(item => item.dataset.view === view);
+    group.classList.toggle("active", isActive);
+  });
   els.views.forEach(section => section.classList.toggle("active", section.id === `${view}View`));
   els.viewTitle.textContent = titles[view];
 }

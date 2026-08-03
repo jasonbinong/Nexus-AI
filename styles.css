@@ -99,6 +99,72 @@ textarea {
   border-top: 1px solid rgba(23, 35, 31, 0.12);
 }
 
+.nav-group {
+  position: relative;
+}
+
+.nav-group summary {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #425047;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.nav-group summary::-webkit-details-marker {
+  display: none;
+}
+
+.nav-group summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.nav-group[open] summary::after {
+  transform: translateY(1px) rotate(225deg);
+}
+
+.nav-group.active summary,
+.nav-group summary:hover {
+  border-color: rgba(47, 111, 115, 0.22);
+  background: rgba(169, 223, 191, 0.2);
+  color: var(--ink);
+}
+
+.nav-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: 220px;
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+.nav-menu .nav-item {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  border-radius: 8px;
+}
+
 .nav-item {
   min-height: 34px;
   padding: 0 10px;
@@ -1081,6 +1147,25 @@ body {
   border-top: 0;
 }
 
+.nav-group summary {
+  min-height: 38px;
+  border-radius: 999px;
+  color: var(--muted);
+}
+
+.nav-group.active summary,
+.nav-group summary:hover {
+  border-color: transparent;
+  background: #eef4ff;
+  color: var(--blue);
+}
+
+.nav-menu {
+  border-radius: 14px;
+  border-color: var(--line);
+  box-shadow: 0 16px 38px rgba(16, 24, 40, 0.12);
+}
+
 .nav-item {
   min-height: 38px;
   padding: 0 11px;
@@ -1519,6 +1604,24 @@ textarea {
 @media (max-width: 1040px) {
   .sidebar {
     display: grid;
+  }
+
+  .nav-list {
+    justify-content: flex-start;
+  }
+
+  .nav-group {
+    width: 100%;
+  }
+
+  .nav-group summary {
+    width: fit-content;
+  }
+
+  .nav-menu {
+    position: static;
+    width: 100%;
+    margin-top: 6px;
   }
 
   .workspace-header {
