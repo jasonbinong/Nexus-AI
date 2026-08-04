@@ -2,10 +2,6 @@
 
 ![Nexus AI career path thumbnail](assets/nexus-thumbnail.png)
 
-<p align="center">
-  <img src="assets/submission/nexus-submission-logo-final.png" alt="Nexus AI logo" width="140">
-</p>
-
 Nexus AI is a student career operating system for college students preparing for internships, fellowships, and early-career opportunities. It brings applications, certifications, projects, networking, interview prep, resume notes, goals, readiness scoring, and coaching into one organized workspace.
 
 ## IBM SkillsBuild AI Builders Challenge
