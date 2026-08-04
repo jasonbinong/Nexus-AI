@@ -124,8 +124,11 @@ AI_TOOL_LABELS = {
     "cover_letter": "Cover Letter Draft",
     "interview_prep": "Interview Practice",
     "role_fit": "Role Fit Explanation",
+    "roadmap": "Role Roadmap",
     "weekly_plan": "Weekly Career Plan",
     "networking_message": "Networking Message",
+    "follow_up": "Application Follow-up",
+    "opportunity_strategy": "Opportunity Strategy",
 }
 
 
@@ -389,6 +392,11 @@ def fallback_ai_sections(request: AiCoachRequest) -> dict[str, Any]:
             ("Risk signals", f"Weakest current signals: {', '.join(str(item.get('name', item)) for item in gaps[:5]) or 'make outcomes more measurable and role-specific'}."),
             ("Next move", f"Build or document proof for {gap_name}, then save one matched opportunity into the pipeline."),
         ],
+        "roadmap": [
+            ("Skills to learn", f"Prioritize {gap_name}, then add proof for the skills most visible in {role}."),
+            ("Project proof", f"Use {project_name} as the anchor project and document the problem, stack, result, and next improvement."),
+            ("Resume keywords", f"Include truthful keywords tied to proof: {role}, AI, data, software, GitHub, deployed project, and {gap_name}."),
+        ],
         "weekly_plan": [
             ("Monday", "Save or apply to two matched roles and add deadlines for each."),
             ("Wednesday", f"Improve {project_name} proof with a clearer README, screenshot, or result statement."),
@@ -399,6 +407,14 @@ def fallback_ai_sections(request: AiCoachRequest) -> dict[str, Any]:
             ("Why it works", "It is specific, short, and asks for advice instead of immediately asking for a job."),
         ],
     }
+    options["follow_up"] = [
+        ("Subject", f"Following up on {app_label}"),
+        ("Draft", f"Hi, I wanted to follow up on my application for {app_label}. Since applying, I have continued strengthening project proof through Nexus AI and related AI/data tools, and I would be glad to share more context on how my experience matches the role."),
+    ]
+    options["opportunity_strategy"] = [
+        ("Prioritize", "Move the strongest saved opportunities into applications before adding more roles."),
+        ("Balance", "Track fellowships and programs separately from internships because they often reward project story and mission fit."),
+    ]
     sections = [{"title": title, "body": body} for title, body in options.get(request.tool, options["resume_review"])]
     if request.extra_context:
         sections.append({"title": "Extra context considered", "body": request.extra_context[:500]})

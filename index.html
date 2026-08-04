@@ -28,6 +28,7 @@
           <div class="nav-menu">
             <button class="nav-item" type="button" data-view="explore" data-nav-root="explore">Explore Roles</button>
             <button class="nav-item" type="button" data-view="jobBoard" data-nav-root="explore">Job Board</button>
+            <button class="nav-item" type="button" data-view="opportunities" data-nav-root="explore">Opportunities</button>
           </div>
         </details>
 
@@ -61,6 +62,7 @@
         </details>
 
         <button class="nav-item" type="button" data-view="profile" data-nav-root="profile">Profile</button>
+        <button class="nav-item" type="button" data-view="account" data-nav-root="account">Account</button>
 
         <details class="nav-group" data-nav-group="more">
           <summary>More</summary>
@@ -130,7 +132,7 @@
             </label>
             <label>
               Target role
-              <input name="targetRole" placeholder="Your target role">
+              <input name="targetRole" list="roleOptions" placeholder="Your target role">
             </label>
             <label>
               Major
@@ -146,6 +148,7 @@
             </label>
             <button class="primary-button" type="submit">Save Profile</button>
           </form>
+          <datalist id="roleOptions"></datalist>
         </section>
 
         <section class="metrics-grid">
@@ -372,6 +375,60 @@
         <section class="job-board-grid" id="jobBoardList"></section>
       </section>
 
+      <section class="view" id="opportunitiesView">
+        <section class="market-hero">
+          <div>
+            <p class="eyebrow">Opportunity tracker</p>
+            <h3>Track internships, fellowships, hackathons, scholarships, and career programs in one place.</h3>
+            <p>Use this as the top of the funnel before deciding what belongs in your application pipeline.</p>
+          </div>
+          <div class="market-search">
+            <label>
+              Filter
+              <select id="opportunityTypeFilter">
+                <option value="all">All types</option>
+                <option>Internship</option>
+                <option>Fellowship</option>
+                <option>Hackathon</option>
+                <option>Scholarship</option>
+                <option>Career Program</option>
+              </select>
+            </label>
+          </div>
+        </section>
+        <div class="dashboard-grid app-detail-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Opportunity Inbox</h3>
+              <span id="opportunityStats">0 saved</span>
+            </div>
+            <form class="entry-form" id="opportunityForm">
+              <input name="name" placeholder="Opportunity name" required>
+              <select name="type">
+                <option>Internship</option>
+                <option>Fellowship</option>
+                <option>Hackathon</option>
+                <option>Scholarship</option>
+                <option>Career Program</option>
+              </select>
+              <input name="organization" placeholder="Organization" required>
+              <input name="deadline" type="date" required>
+              <input name="link" placeholder="Application link">
+              <input name="notes" placeholder="Why it matters / next step">
+              <button class="primary-button" type="submit">Add</button>
+            </form>
+            <div class="card-list" id="opportunitiesList"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Opportunity Strategy</h3>
+              <span>What to prioritize</span>
+            </div>
+            <div class="coach-list" id="opportunityStrategy"></div>
+          </article>
+        </div>
+      </section>
+
       <section class="view" id="certificationsView">
         <article class="panel">
           <div class="panel-heading">
@@ -548,8 +605,11 @@
                 <option value="cover_letter">Cover Letter Draft</option>
                 <option value="interview_prep">Interview Practice</option>
                 <option value="role_fit">Explain Role Fit</option>
+                <option value="roadmap">Role Roadmap</option>
                 <option value="weekly_plan">Weekly Career Plan</option>
                 <option value="networking_message">Networking Message</option>
+                <option value="follow_up">Application Follow-up</option>
+                <option value="opportunity_strategy">Opportunity Strategy</option>
               </select>
             </label>
             <label>
@@ -655,6 +715,39 @@
               <span>Recruiter evidence</span>
             </div>
             <div class="profile-proof" id="profileProof"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="accountView">
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Workspace Account</h3>
+              <span id="accountStatus">Local account</span>
+            </div>
+            <form class="entry-form onboarding-form" id="accountForm">
+              <input name="workspaceName" placeholder="Workspace name" required>
+              <input name="email" type="email" placeholder="Student email" required>
+              <select name="mode">
+                <option value="Private">Private workspace</option>
+                <option value="Mentor review">Mentor review workspace</option>
+                <option value="Portfolio proof">Portfolio proof workspace</option>
+              </select>
+              <button class="primary-button" type="submit">Save Account</button>
+            </form>
+            <div class="coach-list" id="accountSummary"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-heading">
+              <h3>Data Controls</h3>
+              <span>Privacy-first</span>
+            </div>
+            <div class="action-plan-list" id="accountControls"></div>
+            <div class="button-row">
+              <button class="secondary-button" id="downloadAccountButton" type="button">Download Data</button>
+              <button class="secondary-button" id="resetAccountButton" type="button">Reset Workspace</button>
+            </div>
           </article>
         </div>
       </section>

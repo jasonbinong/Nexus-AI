@@ -11,7 +11,14 @@ const starterState = {
     graduation: "",
     weeklyHours: 0
   },
+  account: {
+    workspaceName: "",
+    email: "",
+    mode: "Private",
+    lastSaved: ""
+  },
   applications: [],
+  opportunities: [],
   savedRoles: [],
   jobAnalyses: [],
   chat: [],
@@ -36,6 +43,12 @@ const sampleWorkspace = {
     major: "Business Analytics",
     graduation: "2028",
     weeklyHours: 12
+  },
+  account: {
+    workspaceName: "Sample Student Career Workspace",
+    email: "student@example.edu",
+    mode: "Private",
+    lastSaved: "2026-07-02T19:54:39.000Z"
   },
   applications: [
     {
@@ -73,6 +86,26 @@ const sampleWorkspace = {
       deadline: "2026-08-15",
       link: "https://careers.doordash.com/",
       notes: "Draft proposal on AI coaching systems for local commerce learning loops."
+    }
+  ],
+  opportunities: [
+    {
+      id: "sample-opp-1",
+      name: "MLH Fellowship",
+      type: "Fellowship",
+      organization: "Major League Hacking",
+      deadline: "2026-07-31",
+      link: "https://fellowship.mlh.io/",
+      notes: "Use Nexus AI as the code sample and explain full-stack architecture."
+    },
+    {
+      id: "sample-opp-2",
+      name: "AI Builders Challenge",
+      type: "Career Program",
+      organization: "IBM SkillsBuild",
+      deadline: "2026-07-31",
+      link: "",
+      notes: "Submit Nexus as a student career operating system."
     }
   ],
   certifications: [
@@ -281,6 +314,14 @@ const schemas = {
     ["link", "Posting link", "url"],
     ["notes", "Notes / next action", "text"]
   ],
+  opportunities: [
+    ["name", "Opportunity name", "text"],
+    ["type", "Type", "select", ["Internship", "Fellowship", "Hackathon", "Scholarship", "Career Program"]],
+    ["organization", "Organization", "text"],
+    ["deadline", "Deadline", "date"],
+    ["link", "Application link", "url"],
+    ["notes", "Why it matters / next step", "text"]
+  ],
   certifications: [
     ["name", "Certification", "text"],
     ["provider", "Provider", "text"],
@@ -375,6 +416,10 @@ const els = {
   jobBoardSearch: document.querySelector("#jobBoardSearch"),
   jobBoardCluster: document.querySelector("#jobBoardCluster"),
   jobBoardList: document.querySelector("#jobBoardList"),
+  opportunityTypeFilter: document.querySelector("#opportunityTypeFilter"),
+  opportunitiesList: document.querySelector("#opportunitiesList"),
+  opportunityStats: document.querySelector("#opportunityStats"),
+  opportunityStrategy: document.querySelector("#opportunityStrategy"),
   certificationsList: document.querySelector("#certificationsList"),
   projectsList: document.querySelector("#projectsList"),
   skillsList: document.querySelector("#skillsList"),
@@ -411,6 +456,13 @@ const els = {
   profileScore: document.querySelector("#profileScore"),
   profileSnapshot: document.querySelector("#profileSnapshot"),
   profileProof: document.querySelector("#profileProof"),
+  accountForm: document.querySelector("#accountForm"),
+  accountStatus: document.querySelector("#accountStatus"),
+  accountSummary: document.querySelector("#accountSummary"),
+  accountControls: document.querySelector("#accountControls"),
+  downloadAccountButton: document.querySelector("#downloadAccountButton"),
+  resetAccountButton: document.querySelector("#resetAccountButton"),
+  roleOptions: document.querySelector("#roleOptions"),
   onboardingForm: document.querySelector("#onboardingForm"),
   onboardingChecklist: document.querySelector("#onboardingChecklist"),
   onboardingProgress: document.querySelector("#onboardingProgress"),
@@ -431,6 +483,7 @@ const els = {
 };
 
 document.querySelector("#applicationForm").addEventListener("submit", event => addFromForm(event, "applications"));
+document.querySelector("#opportunityForm").addEventListener("submit", event => addFromForm(event, "opportunities"));
 document.querySelector("#certificationForm").addEventListener("submit", event => addFromForm(event, "certifications"));
 document.querySelector("#projectForm").addEventListener("submit", event => addFromForm(event, "projects"));
 document.querySelector("#skillForm").addEventListener("submit", event => addFromForm(event, "skills"));
@@ -464,6 +517,10 @@ els.roleSearch.addEventListener("input", renderExplore);
 els.roleClusterFilter.addEventListener("change", renderExplore);
 els.jobBoardSearch.addEventListener("input", renderJobBoard);
 els.jobBoardCluster.addEventListener("change", renderJobBoard);
+els.opportunityTypeFilter?.addEventListener("change", renderOpportunities);
+els.accountForm?.addEventListener("submit", saveAccount);
+els.downloadAccountButton?.addEventListener("click", exportSnapshot);
+els.resetAccountButton?.addEventListener("click", clearWorkspace);
 els.editForm.addEventListener("submit", saveEdit);
 els.navItems.forEach(item => item.addEventListener("click", () => {
   switchView(item.dataset.view);
@@ -995,7 +1052,9 @@ function fromBackendSnapshot(snapshot) {
       graduation: snapshot.profile?.graduation || "",
       weeklyHours: snapshot.profile?.weekly_hours || 0
     },
+    account: state?.account || structuredClone(starterState.account),
     applications: snapshot.applications || [],
+    opportunities: state?.opportunities || [],
     savedRoles: state?.savedRoles || [],
     jobAnalyses: state?.jobAnalyses || [],
     chat: state?.chat || [],
@@ -1031,6 +1090,7 @@ function normalizeState(raw) {
     if (Array.isArray(next[key])) next[key] = Array.isArray(raw[key]) ? raw[key] : [];
   });
   next.profile = { ...starterState.profile, ...(raw.profile || {}) };
+  next.account = { ...starterState.account, ...(raw.account || {}) };
   next.onboarding = { ...starterState.onboarding, ...(raw.onboarding || {}) };
   next.resume = typeof raw.resume === "string" ? raw.resume : starterState.resume;
   next.activity = Array.isArray(raw.activity) ? raw.activity.slice(0, 50) : [];
@@ -1059,7 +1119,7 @@ async function addFromForm(event, collection) {
   const form = event.currentTarget;
   const item = parseFormData(form, collection);
   try {
-    if (backendOnline) {
+    if (backendOnline && collection !== "opportunities") {
       await apiRequest(`/${collection}`, {
         method: "POST",
         body: JSON.stringify(toBackendPayload(collection, item))
@@ -1120,6 +1180,24 @@ async function saveProfile(event) {
   }
 }
 
+function saveAccount(event) {
+  event.preventDefault();
+  const data = new FormData(event.currentTarget);
+  state.account = {
+    workspaceName: data.get("workspaceName").trim(),
+    email: data.get("email").trim(),
+    mode: data.get("mode") || "Private",
+    lastSaved: new Date().toISOString()
+  };
+  if (!state.profile.email) state.profile.email = state.account.email;
+  if (!state.profile.displayName && state.account.workspaceName) {
+    state.profile.displayName = state.account.workspaceName.replace(/\s+career\s+workspace$/i, "").trim();
+  }
+  addActivity(`Updated workspace account: ${state.account.workspaceName}`);
+  saveState();
+  render();
+}
+
 async function saveOnboarding(event) {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
@@ -1173,6 +1251,12 @@ function getOnboardingChecklist() {
       body: "A pipeline gives the dashboard enough signal to prioritize deadlines and follow-ups.",
       time: "15 min",
       done: state.applications.filter(app => !["Rejected", "Offer"].includes(app.status)).length >= 3
+    },
+    {
+      title: "Save career opportunities",
+      body: "Track internships, fellowships, hackathons, scholarships, and programs before promoting the best ones to applications.",
+      time: "10 min",
+      done: state.opportunities.length >= 3
     },
     {
       title: "Add two public projects",
@@ -1244,7 +1328,7 @@ async function saveEdit(event) {
 
   const data = parseFormData(els.editForm, collection);
   try {
-    if (backendOnline) {
+    if (backendOnline && collection !== "opportunities") {
       await apiRequest(`/${collection}/${id}`, {
         method: "PUT",
         body: JSON.stringify(toBackendPayload(collection, data))
@@ -1266,7 +1350,7 @@ async function saveEdit(event) {
 async function deleteItem(collection, id) {
   const item = state[collection].find(entry => entry.id === id);
   try {
-    if (backendOnline) {
+    if (backendOnline && collection !== "opportunities") {
       await apiRequest(`/${collection}/${id}`, { method: "DELETE" });
       await refreshFromBackend();
     } else {
@@ -1311,6 +1395,12 @@ async function clearWorkspace() {
     if (backendOnline) {
       await apiRequest("/workspace/reset", { method: "DELETE" });
       await refreshFromBackend();
+      state.account = structuredClone(starterState.account);
+      state.opportunities = [];
+      state.savedRoles = [];
+      state.jobAnalyses = [];
+      state.chat = [];
+      saveState();
     } else {
       state = normalizeState(structuredClone(starterState));
       addActivity("Started a new workspace");
@@ -1334,6 +1424,7 @@ function render() {
   renderDashboard();
   renderExplore();
   renderJobBoard();
+  renderOpportunities();
   renderApplications();
   renderCertifications();
   renderProjects();
@@ -1344,11 +1435,13 @@ function render() {
   renderResume();
   renderAiTools();
   renderProfileView();
+  renderAccount();
   renderOnboarding();
   renderCaseStudy();
 }
 
 function renderProfile() {
+  populateTargetRoleOptions();
   els.profileForm.displayName.value = state.profile.displayName || "";
   els.profileForm.email.value = state.profile.email || "";
   els.profileForm.targetRole.value = state.profile.targetRole || "";
@@ -1433,6 +1526,12 @@ function renderCaseStudy() {
 }
 
 function populateTargetRoleOptions() {
+  if (els.roleOptions) {
+    els.roleOptions.innerHTML = [...careerPaths]
+      .sort((a, b) => a.title.localeCompare(b.title))
+      .map(path => `<option value="${escapeAttribute(path.title)}"></option>`)
+      .join("");
+  }
   if (!els.onboardingForm?.targetRole) return;
   const current = els.onboardingForm.targetRole.value || state.profile.targetRole || "";
   const grouped = [...careerPaths]
@@ -1466,6 +1565,17 @@ function populateRoleClusterOptions() {
     ...clusters.map(cluster => `<option value="${escapeAttribute(cluster)}">${escapeHtml(cluster)}</option>`)
   ].join("");
   els.roleClusterFilter.value = clusters.includes(current) ? current : "all";
+}
+
+function populateJobBoardClusterOptions() {
+  if (!els.jobBoardCluster) return;
+  const current = els.jobBoardCluster.value || "all";
+  const clusters = [...new Set(careerPaths.map(path => path.cluster))].sort((a, b) => a.localeCompare(b));
+  els.jobBoardCluster.innerHTML = [
+    `<option value="all">All clusters</option>`,
+    ...clusters.map(cluster => `<option value="${escapeAttribute(cluster)}">${escapeHtml(cluster)}</option>`)
+  ].join("");
+  els.jobBoardCluster.value = clusters.includes(current) ? current : "all";
 }
 
 function renderDashboard() {
@@ -1659,6 +1769,7 @@ function getExpandedJobBoard() {
 
 function renderJobBoard() {
   if (!els.jobBoardList) return;
+  populateJobBoardClusterOptions();
   const query = els.jobBoardSearch.value.trim().toLowerCase();
   const cluster = els.jobBoardCluster.value;
   const jobs = getExpandedJobBoard()
@@ -1705,6 +1816,105 @@ function saveJobBoardApplication(jobId) {
   }
   render();
   switchView("applications");
+}
+
+function renderOpportunities() {
+  if (!els.opportunitiesList) return;
+  const type = els.opportunityTypeFilter?.value || "all";
+  const opportunities = state.opportunities
+    .filter(item => type === "all" || item.type === type)
+    .sort((a, b) => String(a.deadline || "").localeCompare(String(b.deadline || "")));
+  const active = state.opportunities.filter(item => daysUntil(item.deadline) >= 0);
+  els.opportunityStats.textContent = `${active.length} active`;
+  els.opportunitiesList.innerHTML = opportunities.map(item => {
+    const days = daysUntil(item.deadline);
+    const urgency = days < 0 ? "Closed" : days <= 7 ? "Due soon" : `${days} days left`;
+    return `
+      <div class="data-card">
+        <div class="role-card-top">
+          <span class="cluster-pill">${escapeHtml(item.type)}</span>
+          <strong>${escapeHtml(urgency)}</strong>
+        </div>
+        <h4>${escapeHtml(item.name)}</h4>
+        <p>${escapeHtml(item.organization)} | ${formatDate(item.deadline)}</p>
+        <p>${escapeHtml(item.notes || "Add why this opportunity matters and the next action.")}</p>
+        <div class="button-row">
+          ${item.link ? `<a class="secondary-button" href="${escapeAttribute(item.link)}" target="_blank" rel="noreferrer">Open</a>` : ""}
+          <button class="primary-button" type="button" onclick="promoteOpportunity('${item.id}')">Move To Applications</button>
+          <button class="delete-button" type="button" onclick="deleteLocalOpportunity('${item.id}')">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join("") || emptyState("No opportunities saved yet. Add internships, fellowships, hackathons, scholarships, or career programs.");
+
+  els.opportunityStrategy.innerHTML = generateOpportunityStrategy().map(card => `
+    <div class="coach-card">
+      <h4>${escapeHtml(card.title)}</h4>
+      <p>${escapeHtml(card.body)}</p>
+    </div>
+  `).join("");
+}
+
+function promoteOpportunity(id) {
+  const item = state.opportunities.find(opportunity => opportunity.id === id);
+  if (!item) return;
+  const exists = state.applications.some(app => normalizeSkill(`${app.company}${app.role}`) === normalizeSkill(`${item.organization}${item.name}`));
+  if (!exists) {
+    state.applications.push({
+      id: createId(),
+      company: item.organization,
+      role: item.name,
+      status: "Saved",
+      deadline: item.deadline,
+      link: item.link || "",
+      notes: item.notes || `Promoted from ${item.type} opportunity tracker.`
+    });
+    selectedApplicationId = state.applications[state.applications.length - 1].id;
+    addActivity(`Moved opportunity to applications: ${item.name}`);
+  }
+  saveState();
+  render();
+  switchView("applications");
+}
+
+function deleteLocalOpportunity(id) {
+  state.opportunities = state.opportunities.filter(item => item.id !== id);
+  addActivity("Deleted saved opportunity");
+  saveState();
+  render();
+}
+
+function generateOpportunityStrategy() {
+  const active = state.opportunities.filter(item => daysUntil(item.deadline) >= 0);
+  const urgent = active.filter(item => daysUntil(item.deadline) <= 7).sort((a, b) => a.deadline.localeCompare(b.deadline));
+  const fellowships = active.filter(item => item.type === "Fellowship");
+  const apps = state.applications.filter(item => !["Rejected", "Offer"].includes(item.status));
+  return [
+    {
+      title: "Top priority",
+      body: urgent[0]
+        ? `${urgent[0].name} is due ${formatDate(urgent[0].deadline)}. Decide today whether to apply, archive, or move it to applications.`
+        : active[0]
+        ? `${active[0].name} is the next opportunity by deadline. Add a concrete next step before it becomes urgent.`
+        : "Add 3-5 opportunities so Nexus can help you choose what deserves application time."
+    },
+    {
+      title: "Pipeline balance",
+      body: apps.length < 6
+        ? "Your application pipeline can use more volume. Promote the best saved opportunities into applications with deadlines."
+        : "Your application pipeline has useful volume. Prioritize follow-ups and interview preparation over saving more roles."
+    },
+    {
+      title: "Fellowship angle",
+      body: fellowships.length
+        ? `${fellowships.length} fellowship${fellowships.length === 1 ? "" : "s"} tracked. Use Nexus, CareerLens, and LearnWise as proof of independent building.`
+        : "Add fellowships separately from internships because they often reward project story, initiative, and mission fit."
+    },
+    {
+      title: "Weekly rule",
+      body: "Every week, save five opportunities, promote two to applications, tailor one resume version, and send two networking messages."
+    }
+  ];
 }
 
 function selectCareerPath(pathId) {
@@ -1760,6 +1970,7 @@ function generatePriorityAlerts() {
     return days >= 0 && days <= 3;
   });
   const activeApps = state.applications.filter(app => !["Rejected", "Offer"].includes(app.status));
+  const activeOpportunities = state.opportunities.filter(item => daysUntil(item.deadline) >= 0);
   const fit = calculateSkillFit();
   const projectsWithoutLinks = state.projects.filter(project => !project.link);
 
@@ -2164,6 +2375,7 @@ function renderProfileView() {
     ["Graduation", state.profile.graduation || "Not set"],
     ["Weekly focus", `${state.profile.weeklyHours || 0} hours`],
     ["Applications", `${state.applications.length} tracked`],
+    ["Opportunities", `${state.opportunities.length} saved`],
     ["Saved paths", `${state.savedRoles.length} saved`]
   ].map(([label, value]) => `
     <div class="analytics-item">
@@ -2176,6 +2388,41 @@ function renderProfileView() {
     ...state.certifications.slice(0, 2).map(cert => caseStudyCard(cert.name, `${cert.provider} | ${cert.progress}% complete`)),
     ...state.skills.slice(0, 4).map(skill => caseStudyCard(skill.name, skill.evidence || "Add proof for this skill."))
   ].join("") || emptyState("Add projects, certifications, and skills to build your proof portfolio.");
+}
+
+function renderAccount() {
+  if (!els.accountForm) return;
+  els.accountForm.workspaceName.value = state.account.workspaceName || "";
+  els.accountForm.email.value = state.account.email || state.profile.email || "";
+  els.accountForm.mode.value = state.account.mode || "Private";
+  els.accountStatus.textContent = state.account.email ? "Workspace saved" : "Set up account";
+  const savedAt = state.account.lastSaved ? formatActivityTime(state.account.lastSaved) : "Not saved yet";
+  els.accountSummary.innerHTML = [
+    ["Workspace", state.account.workspaceName || "Not named"],
+    ["Email", state.account.email || state.profile.email || "Not set"],
+    ["Mode", state.account.mode || "Private"],
+    ["Last saved", savedAt]
+  ].map(([title, body]) => `
+    <div class="coach-card">
+      <h4>${escapeHtml(title)}</h4>
+      <p>${escapeHtml(body)}</p>
+    </div>
+  `).join("");
+  els.accountControls.innerHTML = [
+    actionItem("Private by default", "Your profile starts blank and personal information is only stored after you enter it.", "Now", "Privacy"),
+    actionItem("Portable data", "Export a JSON snapshot anytime and keep a backup outside the app.", "1 min", "Data"),
+    actionItem("Backend-ready", "The current API supports profile, resume, applications, skills, projects, goals, and activity. Account auth can be connected with Clerk or Firebase next.", "Next", "Scale"),
+    actionItem("Mentor review", "Use export/import to share a workspace with a mentor without exposing unrelated personal data.", "Optional", "Share")
+  ].map(item => `
+    <div class="action-card">
+      <div class="action-card-top">
+        <span>${escapeHtml(item.due)}</span>
+        <strong>${escapeHtml(item.time)}</strong>
+      </div>
+      <h4>${escapeHtml(item.action)}</h4>
+      <p>${escapeHtml(item.reason)}</p>
+    </div>
+  `).join("");
 }
 
 async function runAiTool() {
@@ -2222,7 +2469,9 @@ async function runAiTool() {
 function buildAiSnapshot() {
   return {
     profile: state.profile,
+    account: state.account,
     applications: state.applications.slice(0, 12),
+    opportunities: state.opportunities.slice(0, 12),
     projects: state.projects.slice(0, 8),
     skills: state.skills.slice(0, 16),
     certifications: state.certifications.slice(0, 8),
@@ -2303,11 +2552,18 @@ function generateLocalAiResponse(payload) {
       ["Why you may be filtered out", fit.gaps.length ? `Missing or weak proof: ${fit.gaps.map(item => item.name).slice(0, 4).join(", ")}.` : "No major skill gaps detected. Improve proof quality and specificity."],
       ["Next move", fit.gaps[0]?.action || "Add stronger measurable outcomes to your best project and apply to more matched roles."]
     ],
+    roadmap: buildRoleRoadmapSections(role, fit, strongestProject),
     weekly_plan: generateWeeklyPlan().map((item, index) => [`Priority ${index + 1}: ${item.action}`, `${item.reason} Time: ${item.time}. Due: ${item.due}.`]),
     networking_message: [
       ["Message draft", `Hi, I’m Jason, an Information Systems student at UMBC interested in ${role}. I’ve been building Nexus AI, CareerLens, and LearnWise to explore how AI and data can improve student career decisions. I’d appreciate any advice on what skills or project proof matter most for ${appLabel}.`],
       ["Follow-up angle", "Keep it short, mention one specific project, ask one clear question, and do not ask for a job in the first message."]
-    ]
+    ],
+    follow_up: [
+      ["Subject line", `Following up on ${appLabel}`],
+      ["Message draft", `Hi, I wanted to follow up on my application for ${appLabel}. Since applying, I have continued strengthening my project proof through Nexus AI and related AI/data tools, and I would be glad to share more context on how my experience matches the role.`],
+      ["Timing", "Send this 5-7 business days after applying unless the posting gives a different timeline."]
+    ],
+    opportunity_strategy: generateOpportunityStrategy().map(card => [card.title, card.body])
   };
 
   const sections = (toolResponses[payload.tool] || toolResponses.weekly_plan).map(([title, body]) => ({ title, body }));
@@ -2315,6 +2571,23 @@ function generateLocalAiResponse(payload) {
     sections.push({ title: "Extra context used", body: `You added: ${payload.extra_context.slice(0, 240)}${payload.extra_context.length > 240 ? "..." : ""}` });
   }
   return { ...common, sections };
+}
+
+function buildRoleRoadmapSections(role, fit, strongestProject) {
+  const bestPath = careerPaths.find(path => path.title === role) || careerPaths
+    .map(path => ({ ...path, fit: calculatePathFit(path) }))
+    .sort((a, b) => b.fit.score - a.fit.score)[0];
+  const skills = bestPath?.skills || fit.required || [];
+  const proof = bestPath?.proof || ["deployed project", "case study", "resume bullets"];
+  const firstGap = fit.gaps[0]?.name || skills[0] || "role-specific proof";
+  return [
+    ["Target outcome", `Build enough proof for ${role} that a recruiter can see a clear connection between your skills, projects, and applications.`],
+    ["Skills to learn next", skills.slice(0, 6).join(", ") || "Add a target role first to generate skill priorities."],
+    ["Project proof to build", proof.join(", ")],
+    ["Resume keywords", [...new Set([role, ...skills.slice(0, 5), "GitHub", "deployed project"])].join(", ")],
+    ["First weekly move", fit.gaps[0]?.action || `Document ${strongestProject?.name || "your strongest project"} with a clearer problem, stack, result, and next improvement.`],
+    ["Interview prep", `Prepare a 90-second story about ${strongestProject?.name || "Nexus AI"} and one example showing ${firstGap}.`]
+  ];
 }
 
 function tableRow(collection, item, cells) {
@@ -2407,13 +2680,14 @@ function renderReadinessTimeline() {
 function calculateCareerScore() {
   const profile = state.profile.targetRole && state.profile.major ? 10 : 0;
   const apps = Math.min(state.applications.length * 4, 20);
+  const opportunities = Math.min(state.opportunities.length * 2, 6);
   const interviews = Math.min(state.applications.filter(app => ["Interviewing", "Offer"].includes(app.status)).length * 6, 12);
   const projects = Math.min(state.projects.filter(project => project.stage === "Published").length * 10, 22);
   const certs = Math.min(state.certifications.reduce((sum, cert) => sum + Number(cert.progress || 0), 0) / 10, 16);
   const network = Math.min(state.networking.length * 4, 12);
   const goals = Math.min(state.goals.reduce((sum, goal) => sum + Number(goal.progress || 0), 0) / 18, 8);
   const skills = Math.min(calculateSkillFit().coverage / 10, 10);
-  return Math.round(profile + apps + interviews + projects + certs + network + goals + skills);
+  return Math.min(100, Math.round(profile + apps + opportunities + interviews + projects + certs + network + goals + skills));
 }
 
 function calculateSkillFit() {
@@ -2606,6 +2880,14 @@ function generateWeeklyPlan() {
   }
 
   if (activeApps.length < 8) {
+    if (activeOpportunities.length >= 2) {
+      plan.push(actionItem(
+        "Promote two saved opportunities",
+        "Move the strongest saved opportunities into applications so they get deadlines, statuses, and follow-up notes.",
+        "25 min",
+        "Today"
+      ));
+    }
     plan.push(actionItem(
       "Add three internship applications",
       "A stronger pipeline gives you more chances while your projects and skills keep improving.",
@@ -2644,6 +2926,15 @@ function generateWeeklyPlan() {
       "Add two networking contacts",
       "A small follow-up system helps you build opportunity before applications go cold.",
       "25 min",
+      "This week"
+    ));
+  }
+
+  if (activeOpportunities.length < 5) {
+    plan.push(actionItem(
+      "Save five career opportunities",
+      "Keep internships, fellowships, hackathons, scholarships, and career programs visible before choosing where to apply.",
+      "30 min",
       "This week"
     ));
   }
@@ -2772,6 +3063,7 @@ function generateAnalytics() {
   const nextDeadline = getAllDeadlines().filter(item => daysUntil(item.date) >= 0).sort((a, b) => a.date.localeCompare(b.date))[0];
 
   return [
+    { label: "Saved opportunities", value: `${state.opportunities.length} tracked` },
     { label: "Application stages", value: appsByStatus },
     { label: "Average certification progress", value: avgCert },
     { label: "Published projects", value: `${published}/${state.projects.length}` },
@@ -2793,6 +3085,7 @@ function getUpcomingDeadlines() {
 
 function getAllDeadlines() {
   return [
+    ...state.opportunities.map(item => ({ type: item.type || "Opportunity", title: `${item.organization} - ${item.name}`, date: item.deadline })),
     ...state.applications.map(item => ({ type: "Application", title: `${item.company} - ${item.role}`, date: item.deadline })),
     ...state.certifications.map(item => ({ type: "Certification", title: item.name, date: item.target })),
     ...state.networking.map(item => ({ type: "Networking", title: item.name, date: item.next })),
@@ -2938,6 +3231,12 @@ async function importSnapshotData(snapshot, filename) {
         body: JSON.stringify(snapshot)
       });
       await refreshFromBackend();
+      state.account = { ...starterState.account, ...(snapshot.account || {}) };
+      state.opportunities = Array.isArray(snapshot.opportunities) ? snapshot.opportunities : [];
+      state.savedRoles = Array.isArray(snapshot.savedRoles) ? snapshot.savedRoles : [];
+      state.jobAnalyses = Array.isArray(snapshot.jobAnalyses) ? snapshot.jobAnalyses : [];
+      state.chat = Array.isArray(snapshot.chat) ? snapshot.chat.slice(-20) : [];
+      saveState();
     } else {
       state = normalizeState(snapshot);
       addActivity(`Imported snapshot: ${filename}`);
@@ -2964,6 +3263,7 @@ function switchView(view) {
     dashboard: "Find Roles. Track Progress. Move Next.",
     explore: "Explore Roles",
     jobBoard: "Job Board",
+    opportunities: "Opportunities",
     applications: "Applications",
     certifications: "Certifications",
     projects: "Projects",
@@ -2973,6 +3273,7 @@ function switchView(view) {
     resume: "Resume Builder",
     aiTools: "AI Career Tools",
     profile: "Student Profile",
+    account: "Workspace Account",
     goals: "Career Goals",
     onboarding: "Onboarding",
     caseStudy: "Case Study"
@@ -3003,6 +3304,7 @@ function isWorkspaceEmpty(workspace) {
 
 function displayName(collection, item) {
   if (collection === "applications") return `${item.company} ${item.role}`;
+  if (collection === "opportunities") return `${item.organization} ${item.name}`;
   if (collection === "certifications") return item.name;
   if (collection === "projects") return item.name;
   if (collection === "skills") return item.name;
@@ -3015,6 +3317,7 @@ function displayName(collection, item) {
 function singular(collection) {
   return {
     applications: "application",
+    opportunities: "opportunity",
     certifications: "certification",
     projects: "project",
     skills: "skill",
