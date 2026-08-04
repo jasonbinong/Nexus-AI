@@ -557,12 +557,20 @@
         <div class="dashboard-grid">
           <article class="panel">
             <div class="panel-heading">
-              <h3>Resume Vault</h3>
-              <span>Working draft</span>
+              <h3>Resume Review</h3>
+              <span id="resumeUploadStatus">PDF or text</span>
+            </div>
+            <div class="resume-upload-zone">
+              <label>
+                Upload resume PDF
+                <input id="resumePdfInput" type="file" accept="application/pdf">
+              </label>
+              <p>Upload a PDF to extract the text, save it in the vault, and generate an honest review.</p>
             </div>
             <textarea id="resumeDraft" spellcheck="false"></textarea>
             <div class="button-row">
-              <button class="primary-button" id="saveResumeButton" type="button">Save Notes</button>
+              <button class="primary-button" id="reviewResumeButton" type="button">Review Resume</button>
+              <button class="secondary-button" id="saveResumeButton" type="button">Save Notes</button>
               <button class="secondary-button" id="downloadResumeButton" type="button">Download TXT</button>
             </div>
           </article>
@@ -892,6 +900,7 @@
     </form>
   </dialog>
 
-    <script src="app.js?v=taxonomy-1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="app.js?v=resume-review-2"></script>
 </body>
 </html>

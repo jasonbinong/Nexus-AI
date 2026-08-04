@@ -430,6 +430,9 @@ const els = {
   goalsList: document.querySelector("#goalsList"),
   resumeDraft: document.querySelector("#resumeDraft"),
   resumeCoach: document.querySelector("#resumeCoach"),
+  resumePdfInput: document.querySelector("#resumePdfInput"),
+  resumeUploadStatus: document.querySelector("#resumeUploadStatus"),
+  reviewResumeButton: document.querySelector("#reviewResumeButton"),
   bulletBuilderForm: document.querySelector("#bulletBuilderForm"),
   bulletOutput: document.querySelector("#bulletOutput"),
   aiToolSelect: document.querySelector("#aiToolSelect"),
@@ -491,6 +494,8 @@ document.querySelector("#networkForm").addEventListener("submit", event => addFr
 document.querySelector("#interviewForm").addEventListener("submit", event => addFromForm(event, "interviews"));
 document.querySelector("#goalForm").addEventListener("submit", event => addFromForm(event, "goals"));
 document.querySelector("#saveResumeButton").addEventListener("click", saveResume);
+els.resumePdfInput?.addEventListener("change", importResumePdf);
+els.reviewResumeButton?.addEventListener("click", reviewResumeNow);
 els.bulletBuilderForm.addEventListener("submit", buildResumeBullet);
 els.bulletOutput.addEventListener("click", event => {
   if (event.target.matches("[data-add-bullet]")) appendBulletToResume();
@@ -1387,6 +1392,80 @@ function downloadResume() {
   downloadFile("nexus-ai-resume-notes.txt", state.resume || "", "text/plain");
 }
 
+async function importResumePdf(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  if (file.type !== "application/pdf") {
+    updateResumeUploadStatus("Use a PDF file");
+    return;
+  }
+  updateResumeUploadStatus("Reading PDF...");
+  try {
+    const text = await extractPdfText(file);
+    if (!text.trim()) {
+      updateResumeUploadStatus("No text found");
+      els.resumeCoach.innerHTML = `
+        <div class="alert-card warning">
+          <strong>PDF text could not be extracted</strong>
+          <span>This may be a scanned/image resume. Paste the resume text into the vault or export a text-based PDF.</span>
+        </div>
+      `;
+      return;
+    }
+    state.resume = cleanExtractedResumeText(text);
+    els.resumeDraft.value = state.resume;
+    addActivity(`Imported resume PDF: ${file.name}`);
+    saveState();
+    renderResumeReview();
+    updateResumeUploadStatus(`Imported ${file.name}`);
+  } catch (error) {
+    console.error(error);
+    updateResumeUploadStatus("PDF import failed");
+    els.resumeCoach.innerHTML = `
+      <div class="alert-card danger">
+        <strong>Resume import failed</strong>
+        <span>PDF parsing is unavailable right now. Paste the text into the vault and run the review.</span>
+      </div>
+    `;
+  } finally {
+    event.target.value = "";
+  }
+}
+
+async function extractPdfText(file) {
+  if (!window.pdfjsLib) throw new Error("PDF.js is not loaded");
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  const buffer = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({ data: buffer }).promise;
+  const pages = [];
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+    pages.push(content.items.map(item => item.str).join(" "));
+  }
+  return pages.join("\n");
+}
+
+function cleanExtractedResumeText(text) {
+  return String(text || "")
+    .replace(/\s+\n/g, "\n")
+    .replace(/\n\s+/g, "\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function updateResumeUploadStatus(message) {
+  if (els.resumeUploadStatus) els.resumeUploadStatus.textContent = message;
+}
+
+function reviewResumeNow() {
+  state.resume = els.resumeDraft.value.trim();
+  addActivity("Ran resume review");
+  saveState();
+  renderResumeReview();
+}
+
 async function clearWorkspace() {
   const confirmed = window.confirm("Start a new blank workspace? This clears the current browser data after exporting is recommended.");
   if (!confirmed) return;
@@ -2130,15 +2209,20 @@ function renderGoals() {
 
 function renderResume() {
   els.resumeDraft.value = state.resume;
+  renderResumeReview();
+  if (!els.bulletOutput.innerHTML.trim()) {
+    els.bulletOutput.innerHTML = emptyState("Build a resume bullet from a project, tool, and result.");
+  }
+}
+
+function renderResumeReview() {
+  if (!els.resumeCoach) return;
   els.resumeCoach.innerHTML = generateResumeCoach().map(card => `
     <div class="coach-card">
       <h4>${escapeHtml(card.title)}</h4>
       <p>${escapeHtml(card.body)}</p>
     </div>
   `).join("");
-  if (!els.bulletOutput.innerHTML.trim()) {
-    els.bulletOutput.innerHTML = emptyState("Build a resume bullet from a project, tool, and result.");
-  }
 }
 
 function renderAiTools() {
@@ -2444,7 +2528,7 @@ async function runAiTool() {
 
   try {
     let result;
-    if (backendOnline) {
+    if (backendOnline && tool !== "resume_review") {
       result = await apiRequest("/ai/coach", {
         method: "POST",
         body: JSON.stringify(payload)
@@ -2524,6 +2608,7 @@ function generateLocalAiResponse(payload) {
   const strongestProject = snapshot.projects.find(project => project.link && project.impact) || snapshot.projects[0];
   const missingSkill = fit.gaps[0]?.name || "role-specific proof";
   const appLabel = app ? `${app.role} at ${app.company}` : role;
+  const resumeReview = analyzeResumeText(snapshot.resume || state.resume);
   const common = {
     provider: "Local fallback",
     note: "Connect the backend with an OpenAI API key to generate model-written responses."
@@ -2531,10 +2616,9 @@ function generateLocalAiResponse(payload) {
 
   const toolResponses = {
     resume_review: [
-      ["Overall resume direction", `Aim the resume at ${role}. Lead with Nexus AI or your strongest deployed project, then use bullets that show action, tool, and result.`],
-      ["Strongest proof to feature", strongestProject ? `${strongestProject.name}: ${strongestProject.impact || "add a measurable result so the project proves impact."}` : "Add one deployed project with a GitHub, live site, or project link before applying."],
-      ["Fix first", `Add evidence for ${missingSkill}. Recruiters need proof through a project, certification, class artifact, or work example.`],
-      ["Bullet formula", "Use: Built/Analyzed/Deployed + tool or method + measurable user/workflow result. Keep each bullet to one clear outcome."]
+      [`Honest score: ${resumeReview.score}/100`, `${resumeReview.verdict} ${resumeReview.summary}`],
+      ["Most important fix", resumeReview.nextEdit],
+      ...resumeReview.issues.slice(0, 5).map(issue => [`${issue.level}: ${issue.title}`, issue.body])
     ],
     cover_letter: [
       ["Opening angle", `I am interested in ${appLabel} because it connects to my work building AI-assisted student career and learning systems.`],
@@ -2555,7 +2639,7 @@ function generateLocalAiResponse(payload) {
     roadmap: buildRoleRoadmapSections(role, fit, strongestProject),
     weekly_plan: generateWeeklyPlan().map((item, index) => [`Priority ${index + 1}: ${item.action}`, `${item.reason} Time: ${item.time}. Due: ${item.due}.`]),
     networking_message: [
-      ["Message draft", `Hi, I’m Jason, an Information Systems student at UMBC interested in ${role}. I’ve been building Nexus AI, CareerLens, and LearnWise to explore how AI and data can improve student career decisions. I’d appreciate any advice on what skills or project proof matter most for ${appLabel}.`],
+      ["Message draft", `Hi, I'm Jason, an Information Systems student at UMBC interested in ${role}. I've been building Nexus AI, CareerLens, and LearnWise to explore how AI and data can improve student career decisions. I'd appreciate any advice on what skills or project proof matter most for ${appLabel}.`],
       ["Follow-up angle", "Keep it short, mention one specific project, ask one clear question, and do not ask for a job in the first message."]
     ],
     follow_up: [
@@ -2984,72 +3068,119 @@ function dedupePlan(plan) {
 }
 
 function generateResumeCoach() {
-  const text = state.resume.toLowerCase();
-  const raw = state.resume.trim();
-  const publicProjects = state.projects.filter(project => project.link);
-  const bullets = raw.split("\n").map(line => line.trim()).filter(line => line.startsWith("-") || line.startsWith("*"));
-  const actionVerbs = ["built", "created", "designed", "developed", "deployed", "analyzed", "implemented", "improved", "automated", "modeled", "tracked", "evaluated"];
-  const tools = ["javascript", "python", "sql", "fastapi", "sqlite", "power bi", "excel", "github", "render", "api", "html", "css"];
-  const hasMetric = /(\d+%|\d+\+|\d+\s?(users|projects|applications|workflows|hours|roles|records)|\/100)/i.test(raw);
-  const actionCount = actionVerbs.filter(verb => text.includes(verb)).length;
-  const toolCount = tools.filter(tool => text.includes(tool)).length;
-  const bulletQuality = bullets.filter(line => {
-    const lower = line.toLowerCase();
-    return actionVerbs.some(verb => lower.includes(verb)) && tools.some(tool => lower.includes(tool)) && /result|impact|deployed|reduced|increased|tracked|centralized|connected|improved|generated/.test(lower);
-  }).length;
-  const score = Math.min(
-    100,
-    Math.round(
-      (raw.length > 160 ? 18 : raw.length > 60 ? 10 : 0) +
-      Math.min(bullets.length * 8, 24) +
-      Math.min(actionCount * 6, 18) +
-      Math.min(toolCount * 5, 20) +
-      (hasMetric ? 12 : 0) +
-      Math.min(bulletQuality * 8, 16)
-    )
-  );
-  const strongestProject = state.projects.find(project => project.link && project.impact) || publicProjects[0];
-
+  const review = analyzeResumeText(state.resume);
   return [
     {
-      title: `Resume strength: ${score}/100`,
-      body: score >= 80
-        ? "Your notes are strong enough to polish into resume bullets. Tighten wording and keep the most measurable proof."
-        : score >= 55
-        ? "Your draft has a useful base. Add more measurable outcomes, named tools, and public project proof."
-        : "Start with 3-4 bullets using action + tool + result. Nexus can help you choose proof from your project tracker."
+      title: `Honest resume score: ${review.score}/100`,
+      body: `${review.verdict} ${review.summary}`
     },
+    ...review.issues.slice(0, 8).map(issue => ({
+      title: `${issue.level}: ${issue.title}`,
+      body: issue.body
+    })),
     {
-      title: "Public proof",
-      body: publicProjects.length
-        ? `${publicProjects.length} project link${publicProjects.length === 1 ? "" : "s"} are tracked. Make sure the resume names the strongest one.`
-        : "Add GitHub or live project links to your projects, then reference the best one in your resume notes."
-    },
-    {
-      title: "Skill alignment",
-      body: state.profile.targetRole
-        ? `Aim your skills and bullets at ${state.profile.targetRole}. Remove tools that are not backed by projects or coursework.`
-        : "Save a target role in your profile so the coach can judge your resume direction."
-    },
-    {
-      title: "Impact language",
-      body: hasMetric
-        ? "You are using measurable language. Keep metrics truthful and connect each number to a result."
-        : "Add numbers where truthful: workflows tracked, projects shipped, roles analyzed, response quality scored, or time saved."
-    },
-    {
-      title: "Bullet structure",
-      body: bulletQuality
-        ? `${bulletQuality} bullet${bulletQuality === 1 ? " already follows" : "s already follow"} action + tool + result. Make every project bullet match that pattern.`
-        : "Rewrite one bullet as: built/deployed/analyzed + tool or method + result for a student, recruiter, or workflow."
-    },
-    {
-      title: "Best project to feature",
-      body: strongestProject
-        ? `Lead with ${strongestProject.name}: ${strongestProject.impact || "add a measurable result and link it to your target role."}`
-        : "Add at least one project link and impact note so your resume has evidence beyond coursework."
+      title: "Best next edit",
+      body: review.nextEdit
     }
   ];
+}
+
+function analyzeResumeText(rawResume) {
+  const raw = String(rawResume || "").trim();
+  if (!raw) {
+    return {
+      score: 0,
+      verdict: "No resume text found.",
+      summary: "Upload a text-based PDF or paste your resume text to get a real review.",
+      nextEdit: "Start by importing your current PDF resume.",
+      issues: [{ level: "Critical", title: "Resume missing", body: "Nexus cannot review an empty resume." }]
+    };
+  }
+
+  const text = raw.toLowerCase();
+  const lines = raw.split(/\n+/).map(line => line.trim()).filter(Boolean);
+  const bullets = lines.filter(line => /^(?:[-*]|\u2022)/.test(line) || /^[A-Z][^.!?]{20,}$/.test(line));
+  const actionVerbs = ["built", "created", "designed", "developed", "deployed", "analyzed", "implemented", "improved", "automated", "modeled", "tracked", "evaluated", "managed", "led", "tested", "documented", "launched", "optimized"];
+  const tools = ["javascript", "python", "java", "sql", "fastapi", "sqlite", "postgresql", "power bi", "excel", "github", "render", "api", "html", "css", "openai", "llm", "cloud", "oracle", "figma"];
+  const sections = ["education", "experience", "projects", "skills"];
+  const role = state.profile.targetRole || inferRoleFromDescription(raw);
+  const roleKeywords = getResumeRoleKeywords(role);
+  const projectNames = state.projects.map(project => project.name.toLowerCase()).filter(Boolean);
+  const issueList = [];
+
+  const hasEmail = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(raw);
+  const hasPhone = /(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/.test(raw);
+  const hasLinkedIn = /linkedin\.com\/in\//i.test(raw);
+  const hasGithub = /github\.com\//i.test(raw);
+  const hasPortfolio = /(https?:\/\/|jasonbinong\.github\.io|portfolio)/i.test(raw);
+  const hasMetric = /(\d+%|\d+\+|\$\d+|\d+\s?(users|projects|applications|workflows|hours|roles|records|students|weeks|endpoints)|\/100)/i.test(raw);
+  const sectionHits = sections.filter(section => text.includes(section));
+  const toolHits = tools.filter(tool => text.includes(tool));
+  const keywordHits = roleKeywords.filter(keyword => text.includes(keyword.toLowerCase()));
+  const actionBulletCount = bullets.filter(line => actionVerbs.some(verb => line.toLowerCase().includes(verb))).length;
+  const strongBulletCount = bullets.filter(line => {
+    const lower = line.toLowerCase();
+    return actionVerbs.some(verb => lower.includes(verb)) &&
+      tools.some(tool => lower.includes(tool)) &&
+      /(\d|result|impact|deployed|reduced|increased|tracked|centralized|connected|improved|generated|launched|supported)/.test(lower);
+  }).length;
+  const weakBullets = bullets.filter(line => line.length < 55 || !/\d|result|impact|deployed|improved|built|analyzed|designed|developed/i.test(line)).slice(0, 3);
+  const projectHits = projectNames.filter(name => name && text.includes(name));
+  const wordCount = raw.split(/\s+/).filter(Boolean).length;
+
+  const checks = [
+    { ok: hasEmail, points: 6, level: "Critical", title: "Missing email", body: "Add a professional email in the header so recruiters can contact you." },
+    { ok: hasPhone, points: 5, level: "High", title: "Missing phone number", body: "Most internship applications still expect a phone number in the resume header." },
+    { ok: hasLinkedIn, points: 5, level: "High", title: "Missing LinkedIn", body: "Add your LinkedIn URL because recruiters often cross-check projects, experience, and profile details." },
+    { ok: hasGithub, points: 8, level: "High", title: "Missing GitHub", body: "For AI/software/data roles, a GitHub link is a major proof signal." },
+    { ok: hasPortfolio, points: 6, level: "Medium", title: "Missing portfolio/live project link", body: "Add your portfolio or deployed project links so your work is verifiable." },
+    { ok: sectionHits.length >= 4, points: 8, level: "Medium", title: "Section structure is incomplete", body: `Detected ${sectionHits.join(", ") || "no core sections"}. A strong student resume should clearly include Education, Experience, Projects, and Skills.` },
+    { ok: bullets.length >= 8, points: 8, level: "Medium", title: "Not enough bullet evidence", body: `Detected about ${bullets.length} bullet-style lines. Add enough bullets to prove experience, projects, and leadership without padding.` },
+    { ok: actionBulletCount >= Math.max(4, Math.ceil(bullets.length * 0.5)), points: 10, level: "High", title: "Bullets need stronger action verbs", body: "More bullets should start with strong verbs like Built, Analyzed, Deployed, Designed, Tested, or Improved." },
+    { ok: strongBulletCount >= 4, points: 14, level: "High", title: "Bullets need action + tool + result", body: `Only ${strongBulletCount} bullets look strong. Rewrite weak bullets to include what you did, what tool you used, and what changed.` },
+    { ok: hasMetric, points: 10, level: "High", title: "Needs measurable outcomes", body: "Add truthful numbers: roles analyzed, workflows tracked, users supported, projects shipped, response quality scored, or hours saved." },
+    { ok: toolHits.length >= 6, points: 10, level: "High", title: "Technical keywords are thin", body: `Detected ${toolHits.join(", ") || "few tools"}. Add relevant tools only if you can defend them in projects or coursework.` },
+    { ok: keywordHits.length >= Math.min(5, roleKeywords.length), points: 8, level: "Medium", title: "Role fit is unclear", body: `For ${role}, include more truthful keywords such as ${roleKeywords.slice(0, 8).join(", ")}.` },
+    { ok: projectHits.length >= Math.min(2, Math.max(1, state.projects.length)), points: 8, level: "Medium", title: "Project proof is disconnected", body: "Your resume should name your strongest projects and connect them to the skills you list." },
+    { ok: wordCount >= 320 && wordCount <= 750, points: 4, level: "Low", title: "Resume length may be off", body: `Detected about ${wordCount} words. For an early-career one-page resume, aim for dense but readable proof.` }
+  ];
+
+  let score = 0;
+  checks.forEach(check => {
+    if (check.ok) score += check.points;
+    else issueList.push({ level: check.level, title: check.title, body: check.body });
+  });
+
+  if (weakBullets.length) {
+    issueList.push({
+      level: "Medium",
+      title: "Weak bullet examples",
+      body: `Review these first: ${weakBullets.map(line => `"${line.slice(0, 110)}"`).join(" ")}`
+    });
+  }
+
+  const verdict = score >= 85
+    ? "Strong resume."
+    : score >= 70
+    ? "Good resume, but not fully internship-proof yet."
+    : score >= 50
+    ? "Decent foundation, but it may get filtered for competitive AI/software/data roles."
+    : "Needs serious work before competitive applications.";
+  const summary = `Detected ${toolHits.length} technical tools, ${keywordHits.length}/${roleKeywords.length} role keywords, ${strongBulletCount} strong bullets, and ${issueList.length} issues.`;
+  const nextEdit = issueList[0]
+    ? `${issueList[0].title}: ${issueList[0].body}`
+    : "Tighten wording and tailor the top project bullets to the exact job description.";
+
+  return { score: Math.min(score, 100), verdict, summary, nextEdit, issues: issueList };
+}
+
+function getResumeRoleKeywords(role) {
+  const lower = String(role || "").toLowerCase();
+  if (lower.includes("software") || lower.includes("developer")) return ["JavaScript", "Python", "Java", "APIs", "Testing", "GitHub", "Deployment", "Object-Oriented Programming", "Debugging"];
+  if (lower.includes("data") || lower.includes("analyst")) return ["SQL", "Excel", "Power BI", "Data Analysis", "Data Visualization", "Statistics", "Dashboard", "Insights", "Reporting"];
+  if (lower.includes("ai") || lower.includes("machine learning") || lower.includes("llm")) return ["Python", "Generative AI", "LLM Evaluation", "Prompt Engineering", "AI Model Evaluation", "Data Quality", "APIs", "Responsible AI"];
+  if (lower.includes("cloud") || lower.includes("systems")) return ["Cloud Computing", "APIs", "Database", "Security", "Networking", "Troubleshooting", "Documentation", "Deployment"];
+  return ["SQL", "JavaScript", "Python", "Data Analysis", "GitHub", "Communication", "Systems Analysis", "Project"];
 }
 
 function generateAnalytics() {
