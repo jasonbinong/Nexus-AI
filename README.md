@@ -1,6 +1,6 @@
 # Nexus AI
 
-![Nexus AI IBM submission cover](assets/submission/nexus-submission-cover-final.png)
+![Nexus AI career path thumbnail](assets/nexus-thumbnail.png)
 
 <p align="center">
   <img src="assets/submission/nexus-submission-logo-final.png" alt="Nexus AI logo" width="140">
