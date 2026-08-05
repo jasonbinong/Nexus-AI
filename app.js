@@ -1459,11 +1459,57 @@ function updateResumeUploadStatus(message) {
   if (els.resumeUploadStatus) els.resumeUploadStatus.textContent = message;
 }
 
-function reviewResumeNow() {
+async function reviewResumeNow() {
   state.resume = els.resumeDraft.value.trim();
   addActivity("Ran resume review");
   saveState();
-  renderResumeReview();
+  els.reviewResumeButton.disabled = true;
+  els.reviewResumeButton.textContent = "Reviewing...";
+  els.resumeCoach.innerHTML = emptyState("Reviewing resume...");
+  try {
+    const payload = {
+      tool: "resume_review",
+      extra_context: "Review this uploaded resume honestly but fairly for AI, data, software, and information systems internship applications. Do not use a harsh formula score; give calibrated recruiter-style feedback.",
+      application: null,
+      snapshot: buildAiSnapshot()
+    };
+    const result = backendOnline
+      ? await apiRequest("/ai/coach", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        })
+      : generateLocalAiResponse(payload);
+    renderResumeAiResult(result);
+  } catch (error) {
+    const fallback = generateLocalAiResponse({
+      tool: "resume_review",
+      extra_context: "",
+      application: null,
+      snapshot: buildAiSnapshot()
+    });
+    fallback.note = error.message;
+    renderResumeAiResult(fallback);
+  } finally {
+    els.reviewResumeButton.disabled = false;
+    els.reviewResumeButton.textContent = "Review Resume";
+  }
+}
+
+function renderResumeAiResult(result) {
+  const sections = Array.isArray(result.sections) ? result.sections : [];
+  els.resumeCoach.innerHTML = sections.map(section => `
+    <div class="coach-card">
+      <h4>${escapeHtml(section.title)}</h4>
+      <p>${escapeHtml(section.body)}</p>
+    </div>
+  `).join("") || emptyState("No review returned. Paste resume text and try again.");
+  if (result.provider || result.note) {
+    els.resumeCoach.innerHTML += `
+      <div class="empty-state">
+        ${escapeHtml([result.provider, result.note].filter(Boolean).join(" | "))}
+      </div>
+    `;
+  }
 }
 
 async function clearWorkspace() {
@@ -2528,7 +2574,7 @@ async function runAiTool() {
 
   try {
     let result;
-    if (backendOnline && tool !== "resume_review") {
+    if (backendOnline) {
       result = await apiRequest("/ai/coach", {
         method: "POST",
         body: JSON.stringify(payload)
@@ -3145,11 +3191,12 @@ function analyzeResumeText(rawResume) {
     { ok: wordCount >= 320 && wordCount <= 750, points: 4, level: "Low", title: "Resume length may be off", body: `Detected about ${wordCount} words. For an early-career one-page resume, aim for dense but readable proof.` }
   ];
 
-  let score = 0;
+  let rawScore = 0;
   checks.forEach(check => {
-    if (check.ok) score += check.points;
+    if (check.ok) rawScore += check.points;
     else issueList.push({ level: check.level, title: check.title, body: check.body });
   });
+  const score = Math.min(96, Math.max(45, Math.round(42 + rawScore * 0.55)));
 
   if (weakBullets.length) {
     issueList.push({
@@ -3171,7 +3218,7 @@ function analyzeResumeText(rawResume) {
     ? `${issueList[0].title}: ${issueList[0].body}`
     : "Tighten wording and tailor the top project bullets to the exact job description.";
 
-  return { score: Math.min(score, 100), verdict, summary, nextEdit, issues: issueList };
+  return { score, verdict, summary, nextEdit, issues: issueList };
 }
 
 function getResumeRoleKeywords(role) {

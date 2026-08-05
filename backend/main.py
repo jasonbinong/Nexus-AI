@@ -370,12 +370,25 @@ def fallback_ai_sections(request: AiCoachRequest) -> dict[str, Any]:
     gap_name = (gaps[0] or {}).get("name") if gaps and isinstance(gaps[0], dict) else "role-specific proof"
     project_name = strongest_project.get("name") or "Nexus AI"
     project_impact = strongest_project.get("impact") or "Add a measurable impact statement to make this proof stronger."
+    resume_text = str(snapshot.get("resume") or "").lower()
+    has_resume = bool(resume_text.strip())
+    resume_strengths = []
+    if "github" in resume_text:
+        resume_strengths.append("GitHub/project proof")
+    if "sql" in resume_text or "python" in resume_text or "javascript" in resume_text:
+        resume_strengths.append("technical keywords")
+    if any(token in resume_text for token in ["deployed", "built", "designed", "analyzed"]):
+        resume_strengths.append("action-oriented bullets")
+    if any(char.isdigit() for char in resume_text):
+        resume_strengths.append("some measurable detail")
 
     options = {
         "resume_review": [
-            ("Resume direction", f"Target the resume toward {role}. Lead with deployed AI/data/software projects and remove skills that are not backed by proof."),
-            ("Best evidence", f"Feature {project_name}: {project_impact}"),
-            ("First improvement", f"Add stronger proof for {gap_name}. Use action + tool + result in every project bullet."),
+            ("Fair review status", "OpenAI model review is not enabled on this backend yet, so this is the calibrated fallback review." if has_resume else "Upload or paste resume text before running review."),
+            ("What already works", f"Detected {', '.join(resume_strengths) if resume_strengths else 'some project and profile context from the workspace'}. Keep the strongest proof visible near the top."),
+            ("Most important improvement", f"Target the resume toward {role}. Lead with deployed AI/data/software projects and make every major bullet follow action + tool + result."),
+            ("Best evidence to feature", f"Feature {project_name}: {project_impact}"),
+            ("Next edit", f"Add stronger proof for {gap_name}, but keep it truthful and tied to a project, course, certification, or work example."),
         ],
         "cover_letter": [
             ("Opening", f"Connect your interest in {app_label} to building AI-assisted career and learning systems for students."),
@@ -432,6 +445,15 @@ def call_openai_ai_coach(request: AiCoachRequest) -> dict[str, Any]:
 
     model = os.getenv("NEXUS_AI_MODEL", "gpt-5").strip() or "gpt-5"
     tool_label = AI_TOOL_LABELS.get(request.tool, request.tool.replace("_", " ").title())
+    resume_instruction = ""
+    if request.tool == "resume_review":
+        resume_instruction = (
+            "For Resume Review, act like a fair senior university career coach and technical recruiter. "
+            "Review the actual resume text in the snapshot, not just project tracker data. "
+            "Be honest but calibrated: do not invent a harsh numerical score from missing signals, and do not flatter. "
+            "If you give a score, make it a recruiter-style estimate for internship readiness, not an ATS pass/fail grade. "
+            "Call out the 3-5 highest-impact fixes, quote or paraphrase specific weak areas when possible, and explain what is already strong. "
+        )
     user_payload = {
         "tool": tool_label,
         "extra_context": request.extra_context[:3000],
@@ -442,6 +464,7 @@ def call_openai_ai_coach(request: AiCoachRequest) -> dict[str, Any]:
         "You are Nexus AI, a practical career coach for college students. "
         "Use the student's workspace data to produce specific, honest, role-aware guidance. "
         "Do not promise jobs or invent credentials. Avoid sending overly personal content. "
+        f"{resume_instruction}"
         "Return only JSON with this shape: "
         '{"provider":"OpenAI","sections":[{"title":"short heading","body":"specific guidance"}],"note":""}. '
         "Create 3 to 6 sections. Keep each body under 90 words.\n\n"
