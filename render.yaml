@@ -14,3 +14,7 @@ services:
         value: /tmp/nexus.db
       - key: NEXUS_ALLOWED_ORIGINS
         value: https://jasonbinong.github.io,http://127.0.0.1:8070,http://localhost:8070
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: NEXUS_AI_MODEL
+        value: gpt-5
