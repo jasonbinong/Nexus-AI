@@ -458,8 +458,21 @@ def call_openai_ai_coach(request: AiCoachRequest) -> dict[str, Any]:
         "tool": tool_label,
         "extra_context": request.extra_context[:3000],
         "selected_application": request.application,
-        "workspace_snapshot": request.snapshot,
+        "workspace_snapshot": {
+            key: value
+            for key, value in request.snapshot.items()
+            if key != "resumePageImages"
+        },
     }
+    resume_images = []
+    if request.tool == "resume_review":
+        raw_images = request.snapshot.get("resumePageImages") or []
+        if isinstance(raw_images, list):
+            resume_images = [
+                image
+                for image in raw_images[:2]
+                if isinstance(image, str) and image.startswith("data:image/")
+            ]
     prompt = (
         "You are Nexus AI, a practical career coach for college students. "
         "Use the student's workspace data to produce specific, honest, role-aware guidance. "
@@ -470,7 +483,13 @@ def call_openai_ai_coach(request: AiCoachRequest) -> dict[str, Any]:
         "Create 3 to 6 sections. Keep each body under 90 words.\n\n"
         f"Request data:\n{json.dumps(user_payload, ensure_ascii=False)}"
     )
-    body = json.dumps({"model": model, "input": prompt}).encode("utf-8")
+    if resume_images:
+        content: list[dict[str, Any]] = [{"type": "input_text", "text": prompt}]
+        content.extend({"type": "input_image", "image_url": image} for image in resume_images)
+        request_input: str | list[dict[str, Any]] = [{"role": "user", "content": content}]
+    else:
+        request_input = prompt
+    body = json.dumps({"model": model, "input": request_input}).encode("utf-8")
     req = urllib.request.Request(
         "https://api.openai.com/v1/responses",
         data=body,

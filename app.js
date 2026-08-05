@@ -373,6 +373,7 @@ let currentRecommendations = [];
 let selectedApplicationId = "";
 let latestJobAnalysis = null;
 let latestGeneratedBullet = "";
+let latestResumePageImages = [];
 
 const els = {
   navItems: [...document.querySelectorAll(".nav-item")],
@@ -1413,11 +1414,12 @@ async function importResumePdf(event) {
       return;
     }
     state.resume = cleanExtractedResumeText(text);
+    latestResumePageImages = await renderPdfPages(file);
     els.resumeDraft.value = state.resume;
     addActivity(`Imported resume PDF: ${file.name}`);
     saveState();
-    renderResumeReview();
-    updateResumeUploadStatus(`Imported ${file.name}`);
+    await reviewResumeNow();
+    updateResumeUploadStatus(`Imported ${file.name} with ${latestResumePageImages.length} page image${latestResumePageImages.length === 1 ? "" : "s"}`);
   } catch (error) {
     console.error(error);
     updateResumeUploadStatus("PDF import failed");
@@ -1446,6 +1448,29 @@ async function extractPdfText(file) {
   return pages.join("\n");
 }
 
+async function renderPdfPages(file) {
+  if (!window.pdfjsLib) throw new Error("PDF.js is not loaded");
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  const buffer = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({ data: buffer }).promise;
+  const rendered = [];
+  const maxPages = Math.min(pdf.numPages, 2);
+  for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const viewport = page.getViewport({ scale: 1 });
+    const targetWidth = 1400;
+    const scale = targetWidth / viewport.width;
+    const scaledViewport = page.getViewport({ scale });
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d", { alpha: false });
+    canvas.width = Math.floor(scaledViewport.width);
+    canvas.height = Math.floor(scaledViewport.height);
+    await page.render({ canvasContext: context, viewport: scaledViewport }).promise;
+    rendered.push(canvas.toDataURL("image/jpeg", 0.86));
+  }
+  return rendered;
+}
+
 function cleanExtractedResumeText(text) {
   return String(text || "")
     .replace(/\s+\n/g, "\n")
@@ -1471,7 +1496,7 @@ async function reviewResumeNow() {
       tool: "resume_review",
       extra_context: "Review this uploaded resume honestly but fairly for AI, data, software, and information systems internship applications. Do not use a harsh formula score; give calibrated recruiter-style feedback.",
       application: null,
-      snapshot: buildAiSnapshot()
+      snapshot: buildAiSnapshot({ includeResumeImages: true })
     };
     const result = backendOnline
       ? await apiRequest("/ai/coach", {
@@ -1485,7 +1510,7 @@ async function reviewResumeNow() {
       tool: "resume_review",
       extra_context: "",
       application: null,
-      snapshot: buildAiSnapshot()
+      snapshot: buildAiSnapshot({ includeResumeImages: true })
     });
     fallback.note = error.message;
     renderResumeAiResult(fallback);
@@ -2596,8 +2621,8 @@ async function runAiTool() {
   }
 }
 
-function buildAiSnapshot() {
-  return {
+function buildAiSnapshot(options = {}) {
+  const snapshot = {
     profile: state.profile,
     account: state.account,
     applications: state.applications.slice(0, 12),
@@ -2615,6 +2640,10 @@ function buildAiSnapshot() {
     skillFit: calculateSkillFit(),
     weeklyPlan: generateWeeklyPlan()
   };
+  if (options.includeResumeImages && latestResumePageImages.length) {
+    snapshot.resumePageImages = latestResumePageImages;
+  }
+  return snapshot;
 }
 
 function renderAiResult(result) {
