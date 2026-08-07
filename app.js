@@ -1473,6 +1473,9 @@ async function renderPdfPages(file) {
 
 function cleanExtractedResumeText(text) {
   return String(text || "")
+    .replace(/\s+(Education|Experience|Projects|Technical Skills|Skills|Certifications|Leadership|Relevant Coursework|Languages|Tools)\s+/gi, "\n\n$1\n")
+    .replace(/\s+(-|\u2022)\s+/g, "\n- ")
+    .replace(/\s+(Built|Created|Designed|Developed|Deployed|Analyzed|Implemented|Improved|Automated|Modeled|Tracked|Evaluated|Managed|Led|Tested|Documented|Launched|Optimized)\s+/g, "\n- $1 ")
     .replace(/\s+\n/g, "\n")
     .replace(/\n\s+/g, "\n")
     .replace(/[ \t]{2,}/g, " ")
@@ -1522,8 +1525,8 @@ async function reviewResumeNow() {
 
 function renderResumeAiResult(result) {
   const sections = Array.isArray(result.sections) ? result.sections : [];
-  els.resumeCoach.innerHTML = sections.map(section => `
-    <div class="coach-card">
+  els.resumeCoach.innerHTML = sections.map((section, index) => `
+    <div class="coach-card ${index === 0 ? "review-score-card" : ""}">
       <h4>${escapeHtml(section.title)}</h4>
       <p>${escapeHtml(section.body)}</p>
     </div>
@@ -2692,6 +2695,7 @@ function generateLocalAiResponse(payload) {
   const toolResponses = {
     resume_review: [
       [`Honest score: ${resumeReview.score}/100`, `${resumeReview.verdict} ${resumeReview.summary}`],
+      ["What is working", resumeReview.strengths?.length ? resumeReview.strengths.join(", ") : "Nexus found enough structure to review the resume. Keep the strongest project and experience proof near the top."],
       ["Most important fix", resumeReview.nextEdit],
       ...resumeReview.issues.slice(0, 5).map(issue => [`${issue.level}: ${issue.title}`, issue.body])
     ],
@@ -3015,6 +3019,7 @@ function generateWeeklyPlan() {
   const upcoming = getUpcomingDeadlines();
   const fit = calculateSkillFit();
   const activeApps = state.applications.filter(app => !["Rejected", "Offer"].includes(app.status));
+  const activeOpportunities = state.opportunities.filter(item => !item.deadline || daysUntil(item.deadline) >= 0);
   const publishedProjects = state.projects.filter(project => project.stage === "Published" || project.stage === "Improving");
   const lowestGoal = state.goals
     .filter(goal => Number(goal.progress || 0) < 100)
@@ -3173,15 +3178,16 @@ function analyzeResumeText(rawResume) {
   }
 
   const text = raw.toLowerCase();
-  const lines = raw.split(/\n+/).map(line => line.trim()).filter(Boolean);
-  const bullets = lines.filter(line => /^(?:[-*]|\u2022)/.test(line) || /^[A-Z][^.!?]{20,}$/.test(line));
+  const lines = normalizeResumeLines(raw);
+  const bullets = extractResumeBullets(lines);
   const actionVerbs = ["built", "created", "designed", "developed", "deployed", "analyzed", "implemented", "improved", "automated", "modeled", "tracked", "evaluated", "managed", "led", "tested", "documented", "launched", "optimized"];
-  const tools = ["javascript", "python", "java", "sql", "fastapi", "sqlite", "postgresql", "power bi", "excel", "github", "render", "api", "html", "css", "openai", "llm", "cloud", "oracle", "figma"];
+  const tools = ["javascript", "python", "java", "sql", "fastapi", "sqlite", "postgresql", "power bi", "excel", "github", "render", "api", "apis", "html", "css", "openai", "llm", "llms", "cloud", "oracle", "figma", "powerbi", "firebase", "clerk"];
   const sections = ["education", "experience", "projects", "skills"];
   const role = state.profile.targetRole || inferRoleFromDescription(raw);
   const roleKeywords = getResumeRoleKeywords(role);
   const projectNames = state.projects.map(project => project.name.toLowerCase()).filter(Boolean);
   const issueList = [];
+  const strengths = [];
 
   const hasEmail = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(raw);
   const hasPhone = /(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/.test(raw);
@@ -3192,14 +3198,14 @@ function analyzeResumeText(rawResume) {
   const sectionHits = sections.filter(section => text.includes(section));
   const toolHits = tools.filter(tool => text.includes(tool));
   const keywordHits = roleKeywords.filter(keyword => text.includes(keyword.toLowerCase()));
-  const actionBulletCount = bullets.filter(line => actionVerbs.some(verb => line.toLowerCase().includes(verb))).length;
+  const actionBulletCount = bullets.filter(line => actionVerbs.some(verb => startsWithActionVerb(line, verb) || line.toLowerCase().includes(` ${verb} `))).length;
   const strongBulletCount = bullets.filter(line => {
     const lower = line.toLowerCase();
     return actionVerbs.some(verb => lower.includes(verb)) &&
       tools.some(tool => lower.includes(tool)) &&
-      /(\d|result|impact|deployed|reduced|increased|tracked|centralized|connected|improved|generated|launched|supported)/.test(lower);
+      /(\d|result|impact|deployed|reduced|increased|tracked|centraliz|connect|improv|generat|launch|support|turn|rank|recommend|workflow|quality|accuracy|safety|centralize)/.test(lower);
   }).length;
-  const weakBullets = bullets.filter(line => line.length < 55 || !/\d|result|impact|deployed|improved|built|analyzed|designed|developed/i.test(line)).slice(0, 3);
+  const weakBullets = bullets.filter(line => line.length < 48 || !/\d|result|impact|deployed|improved|built|analyzed|designed|developed|evaluated|tracked/i.test(line)).slice(0, 3);
   const projectHits = projectNames.filter(name => name && text.includes(name));
   const wordCount = raw.split(/\s+/).filter(Boolean).length;
 
@@ -3210,22 +3216,33 @@ function analyzeResumeText(rawResume) {
     { ok: hasGithub, points: 8, level: "High", title: "Missing GitHub", body: "For AI/software/data roles, a GitHub link is a major proof signal." },
     { ok: hasPortfolio, points: 6, level: "Medium", title: "Missing portfolio/live project link", body: "Add your portfolio or deployed project links so your work is verifiable." },
     { ok: sectionHits.length >= 4, points: 8, level: "Medium", title: "Section structure is incomplete", body: `Detected ${sectionHits.join(", ") || "no core sections"}. A strong student resume should clearly include Education, Experience, Projects, and Skills.` },
-    { ok: bullets.length >= 8, points: 8, level: "Medium", title: "Not enough bullet evidence", body: `Detected about ${bullets.length} bullet-style lines. Add enough bullets to prove experience, projects, and leadership without padding.` },
-    { ok: actionBulletCount >= Math.max(4, Math.ceil(bullets.length * 0.5)), points: 10, level: "High", title: "Bullets need stronger action verbs", body: "More bullets should start with strong verbs like Built, Analyzed, Deployed, Designed, Tested, or Improved." },
-    { ok: strongBulletCount >= 4, points: 14, level: "High", title: "Bullets need action + tool + result", body: `Only ${strongBulletCount} bullets look strong. Rewrite weak bullets to include what you did, what tool you used, and what changed.` },
+    { ok: bullets.length >= 7, points: 8, level: "Medium", title: "Not enough bullet evidence", body: `Detected about ${bullets.length} bullet-style lines. Add enough bullets to prove experience, projects, and leadership without padding.` },
+    { ok: actionBulletCount >= Math.max(3, Math.ceil(bullets.length * 0.35)), points: 10, level: "High", title: "Bullets need stronger action verbs", body: "More bullets should start with strong verbs like Built, Analyzed, Deployed, Designed, Tested, or Improved." },
+    { ok: strongBulletCount >= 3, points: 14, level: "High", title: "Bullets need action + tool + result", body: `Detected ${strongBulletCount} strong bullets. Rewrite weak bullets to include what you did, what tool you used, and what changed.` },
     { ok: hasMetric, points: 10, level: "High", title: "Needs measurable outcomes", body: "Add truthful numbers: roles analyzed, workflows tracked, users supported, projects shipped, response quality scored, or hours saved." },
-    { ok: toolHits.length >= 6, points: 10, level: "High", title: "Technical keywords are thin", body: `Detected ${toolHits.join(", ") || "few tools"}. Add relevant tools only if you can defend them in projects or coursework.` },
-    { ok: keywordHits.length >= Math.min(5, roleKeywords.length), points: 8, level: "Medium", title: "Role fit is unclear", body: `For ${role}, include more truthful keywords such as ${roleKeywords.slice(0, 8).join(", ")}.` },
+    { ok: toolHits.length >= 5, points: 10, level: "High", title: "Technical keywords are thin", body: `Detected ${toolHits.join(", ") || "few tools"}. Add relevant tools only if you can defend them in projects or coursework.` },
+    { ok: keywordHits.length >= Math.min(4, roleKeywords.length), points: 8, level: "Medium", title: "Role fit is unclear", body: `For ${role}, include more truthful keywords such as ${roleKeywords.slice(0, 8).join(", ")}.` },
     { ok: projectHits.length >= Math.min(2, Math.max(1, state.projects.length)), points: 8, level: "Medium", title: "Project proof is disconnected", body: "Your resume should name your strongest projects and connect them to the skills you list." },
     { ok: wordCount >= 320 && wordCount <= 750, points: 4, level: "Low", title: "Resume length may be off", body: `Detected about ${wordCount} words. For an early-career one-page resume, aim for dense but readable proof.` }
   ];
 
   let rawScore = 0;
   checks.forEach(check => {
-    if (check.ok) rawScore += check.points;
+    if (check.ok) {
+      rawScore += check.points;
+      const strength = positiveResumeSignal(check.title);
+      if (strength) strengths.push(strength);
+    }
     else issueList.push({ level: check.level, title: check.title, body: check.body });
   });
-  const score = Math.min(96, Math.max(45, Math.round(42 + rawScore * 0.55)));
+  const maxScore = checks.reduce((sum, check) => sum + check.points, 0);
+  const signalRatio = rawScore / maxScore;
+  const completenessBonus = Math.min(8, sectionHits.length * 1.5 + Math.min(projectHits.length, 3));
+  const proofBonus = Math.min(8, strongBulletCount * 2 + (hasGithub ? 1 : 0) + (hasPortfolio ? 1 : 0));
+  const floor = raw.length > 900 && sectionHits.length >= 3 ? 62 : 48;
+  let score = Math.min(96, Math.max(floor, Math.round(50 + signalRatio * 38 + completenessBonus + proofBonus)));
+  if (!hasMetric) score = Math.min(score, 86);
+  if (wordCount < 220) score = Math.min(score, 82);
 
   if (weakBullets.length) {
     issueList.push({
@@ -3238,16 +3255,59 @@ function analyzeResumeText(rawResume) {
   const verdict = score >= 85
     ? "Strong resume."
     : score >= 70
-    ? "Good resume, but not fully internship-proof yet."
+    ? "Good resume with credible internship signals."
     : score >= 50
-    ? "Decent foundation, but it may get filtered for competitive AI/software/data roles."
+    ? "Decent foundation, but it needs sharper proof for competitive AI/software/data roles."
     : "Needs serious work before competitive applications.";
-  const summary = `Detected ${toolHits.length} technical tools, ${keywordHits.length}/${roleKeywords.length} role keywords, ${strongBulletCount} strong bullets, and ${issueList.length} issues.`;
+  const summary = `Detected ${sectionHits.length}/4 core sections, ${toolHits.length} technical tools, ${keywordHits.length}/${roleKeywords.length} role keywords, ${bullets.length} bullet lines, and ${strongBulletCount} strong action-tool-result bullets.`;
   const nextEdit = issueList[0]
     ? `${issueList[0].title}: ${issueList[0].body}`
     : "Tighten wording and tailor the top project bullets to the exact job description.";
 
-  return { score, verdict, summary, nextEdit, issues: issueList };
+  return { score, verdict, summary, nextEdit, issues: issueList, strengths: strengths.slice(0, 6) };
+}
+
+function normalizeResumeLines(raw) {
+  return String(raw || "")
+    .replace(/\r/g, "\n")
+    .replace(/\s+(Education|Experience|Projects|Technical Skills|Skills|Certifications|Leadership|Relevant Coursework|Languages|Tools)\s+/gi, "\n$1\n")
+    .replace(/\s+(-|\u2022)\s+/g, "\n- ")
+    .replace(/\s+(Built|Created|Designed|Developed|Deployed|Analyzed|Implemented|Improved|Automated|Modeled|Tracked|Evaluated|Managed|Led|Tested|Documented|Launched|Optimized)\s+/g, "\n$1 ")
+    .split(/\n+/)
+    .map(line => line.trim())
+    .filter(Boolean);
+}
+
+function extractResumeBullets(lines) {
+  const sectionLabels = /^(education|experience|projects|technical skills|skills|certifications|leadership|relevant coursework|languages|tools)$/i;
+  const actionStart = /^(?:[-*\u2022]\s*)?(built|created|designed|developed|deployed|analyzed|implemented|improved|automated|modeled|tracked|evaluated|managed|led|tested|documented|launched|optimized|supported|collaborated|represented|ranked|centralized)\b/i;
+  return lines
+    .filter(line => !sectionLabels.test(line))
+    .filter(line => /^(?:[-*]|\u2022)/.test(line) || actionStart.test(line) || /^[A-Z][^.!?]{45,}$/.test(line))
+    .map(line => line.replace(/^(?:[-*]|\u2022)\s*/, "").trim());
+}
+
+function startsWithActionVerb(line, verb) {
+  return new RegExp(`^(?:[-*\\u2022]\\s*)?${verb}\\b`, "i").test(line);
+}
+
+function positiveResumeSignal(title) {
+  return {
+    "Missing email": "clear email contact",
+    "Missing phone number": "phone contact",
+    "Missing LinkedIn": "LinkedIn profile",
+    "Missing GitHub": "GitHub proof",
+    "Missing portfolio/live project link": "portfolio or live project link",
+    "Section structure is incomplete": "clear Education, Experience, Projects, and Skills sections",
+    "Not enough bullet evidence": "enough bullet evidence",
+    "Bullets need stronger action verbs": "action-oriented bullets",
+    "Bullets need action + tool + result": "multiple action-tool-result bullets",
+    "Needs measurable outcomes": "measurable detail",
+    "Technical keywords are thin": "technical keywords",
+    "Role fit is unclear": "role-aligned keywords",
+    "Project proof is disconnected": "project proof connected to resume",
+    "Resume length may be off": "reasonable resume length",
+  }[title] || "";
 }
 
 function getResumeRoleKeywords(role) {

@@ -351,6 +351,123 @@ def build_career_report(snapshot: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def analyze_resume_for_fallback(raw_resume: str, role: str) -> dict[str, Any]:
+    raw = raw_resume.strip()
+    if not raw:
+        return {
+            "score": 0,
+            "summary": "No resume text found.",
+            "strengths": "",
+            "next_edit": "Import a text-based PDF or paste resume text before running the review.",
+            "top_issue": "Nexus cannot review an empty resume.",
+        }
+
+    text = raw.lower()
+    sections = ["education", "experience", "projects", "skills"]
+    tools = [
+        "javascript", "python", "java", "sql", "fastapi", "sqlite", "postgresql",
+        "power bi", "excel", "github", "render", "api", "html", "css", "openai",
+        "llm", "cloud", "oracle",
+    ]
+    action_verbs = [
+        "built", "created", "designed", "developed", "deployed", "analyzed",
+        "implemented", "improved", "automated", "tracked", "evaluated", "tested",
+        "documented", "launched", "optimized",
+    ]
+    role_keywords = get_fallback_role_keywords(role)
+    section_hits = [section for section in sections if section in text]
+    tool_hits = [tool for tool in tools if tool in text]
+    keyword_hits = [keyword for keyword in role_keywords if keyword.lower() in text]
+    has_email = "@" in raw and "." in raw.split("@")[-1]
+    has_phone = any(char.isdigit() for char in raw) and len([char for char in raw if char.isdigit()]) >= 10
+    has_linkedin = "linkedin.com/in/" in text
+    has_github = "github.com/" in text
+    has_portfolio = "jasonbinong.github.io" in text or "portfolio" in text or "https://" in text
+    has_metric = any(char.isdigit() for char in raw) and any(token in text for token in ["%", "+", "weeks", "roles", "projects", "applications", "score", "/100"])
+    action_count = sum(1 for verb in action_verbs if verb in text)
+    word_count = len(raw.split())
+
+    score_parts = [
+        8 if has_email else 0,
+        5 if has_phone else 0,
+        6 if has_linkedin else 0,
+        8 if has_github else 0,
+        6 if has_portfolio else 0,
+        min(16, len(section_hits) * 4),
+        min(14, len(tool_hits) * 2),
+        min(12, len(keyword_hits) * 3),
+        min(12, action_count * 2),
+        8 if has_metric else 0,
+        6 if 280 <= word_count <= 780 else 2,
+    ]
+    raw_score = sum(score_parts)
+    score = min(96, max(62 if len(section_hits) >= 3 and word_count > 180 else 48, round(45 + raw_score * 0.55)))
+    if not has_metric:
+        score = min(score, 86)
+    if word_count < 220:
+        score = min(score, 82)
+
+    strengths = []
+    if len(section_hits) >= 3:
+        strengths.append("clear resume structure")
+    if len(tool_hits) >= 5:
+        strengths.append(f"technical keywords ({', '.join(tool_hits[:5])})")
+    if has_github:
+        strengths.append("GitHub proof")
+    if has_portfolio:
+        strengths.append("portfolio/live-link signal")
+    if action_count >= 4:
+        strengths.append("action-oriented bullets")
+    if has_metric:
+        strengths.append("some measurable detail")
+
+    issues = []
+    if not has_github:
+        issues.append("Add a GitHub link for technical proof.")
+    if not has_portfolio:
+        issues.append("Add a portfolio or deployed project link.")
+    if len(tool_hits) < 5:
+        issues.append("Add truthful technical tools that are backed by projects or coursework.")
+    if len(keyword_hits) < min(4, len(role_keywords)):
+        issues.append(f"Tailor more keywords toward {role}: {', '.join(role_keywords[:6])}.")
+    if action_count < 4:
+        issues.append("Rewrite more bullets with action + tool + result.")
+    if not has_metric:
+        issues.append("Add truthful numbers or measurable outcomes where possible.")
+
+    verdict = (
+        "Strong internship resume."
+        if score >= 85
+        else "Good resume with credible internship signals."
+        if score >= 70
+        else "Decent foundation, but it needs sharper proof for competitive roles."
+    )
+    summary = (
+        f"{verdict} Detected {len(section_hits)}/4 core sections, {len(tool_hits)} tools, "
+        f"{len(keyword_hits)}/{len(role_keywords)} role keywords, and {action_count} action signals."
+    )
+    return {
+        "score": score,
+        "summary": summary,
+        "strengths": ", ".join(strengths),
+        "next_edit": issues[0] if issues else "Tailor the top project bullets to the exact job description.",
+        "top_issue": issues[1] if len(issues) > 1 else (issues[0] if issues else ""),
+    }
+
+
+def get_fallback_role_keywords(role: str) -> list[str]:
+    lower = role.lower()
+    if "software" in lower or "developer" in lower:
+        return ["JavaScript", "Python", "Java", "APIs", "Testing", "GitHub", "Deployment", "Debugging"]
+    if "data" in lower or "analyst" in lower:
+        return ["SQL", "Excel", "Power BI", "Data Analysis", "Data Visualization", "Statistics", "Dashboard", "Insights"]
+    if "ai" in lower or "machine learning" in lower or "llm" in lower:
+        return ["Python", "Generative AI", "LLM Evaluation", "Prompt Engineering", "AI Model Evaluation", "Data Quality", "APIs"]
+    if "cloud" in lower or "systems" in lower:
+        return ["Cloud Computing", "APIs", "Database", "Security", "Networking", "Troubleshooting", "Documentation"]
+    return ["SQL", "JavaScript", "Python", "Data Analysis", "GitHub", "Communication", "Systems Analysis"]
+
+
 def fallback_ai_sections(request: AiCoachRequest) -> dict[str, Any]:
     snapshot = request.snapshot or {}
     profile = snapshot.get("profile") or {}
@@ -370,25 +487,16 @@ def fallback_ai_sections(request: AiCoachRequest) -> dict[str, Any]:
     gap_name = (gaps[0] or {}).get("name") if gaps and isinstance(gaps[0], dict) else "role-specific proof"
     project_name = strongest_project.get("name") or "Nexus AI"
     project_impact = strongest_project.get("impact") or "Add a measurable impact statement to make this proof stronger."
-    resume_text = str(snapshot.get("resume") or "").lower()
-    has_resume = bool(resume_text.strip())
-    resume_strengths = []
-    if "github" in resume_text:
-        resume_strengths.append("GitHub/project proof")
-    if "sql" in resume_text or "python" in resume_text or "javascript" in resume_text:
-        resume_strengths.append("technical keywords")
-    if any(token in resume_text for token in ["deployed", "built", "designed", "analyzed"]):
-        resume_strengths.append("action-oriented bullets")
-    if any(char.isdigit() for char in resume_text):
-        resume_strengths.append("some measurable detail")
+    resume_review = analyze_resume_for_fallback(str(snapshot.get("resume") or ""), role)
+    has_resume = bool(str(snapshot.get("resume") or "").strip())
 
     options = {
         "resume_review": [
-            ("Fair review status", "OpenAI model review is not enabled on this backend yet, so this is the calibrated fallback review." if has_resume else "Upload or paste resume text before running review."),
-            ("What already works", f"Detected {', '.join(resume_strengths) if resume_strengths else 'some project and profile context from the workspace'}. Keep the strongest proof visible near the top."),
-            ("Most important improvement", f"Target the resume toward {role}. Lead with deployed AI/data/software projects and make every major bullet follow action + tool + result."),
+            (f"Honest score: {resume_review['score']}/100", resume_review["summary"] if has_resume else "Upload or paste resume text before running review."),
+            ("What already works", resume_review["strengths"] or "Nexus found some profile/project context, but the resume text is too thin to review confidently."),
+            ("Most important improvement", resume_review["next_edit"] or f"Target the resume toward {role}. Lead with deployed AI/data/software projects and make every major bullet follow action + tool + result."),
             ("Best evidence to feature", f"Feature {project_name}: {project_impact}"),
-            ("Next edit", f"Add stronger proof for {gap_name}, but keep it truthful and tied to a project, course, certification, or work example."),
+            ("Next edit", resume_review["top_issue"] or f"Add stronger proof for {gap_name}, but keep it truthful and tied to a project, course, certification, or work example."),
         ],
         "cover_letter": [
             ("Opening", f"Connect your interest in {app_label} to building AI-assisted career and learning systems for students."),
