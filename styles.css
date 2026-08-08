@@ -552,6 +552,13 @@ h3 {
   border-left: 4px solid var(--blue);
 }
 
+.recommended-card {
+  border-left-color: var(--green);
+  background:
+    linear-gradient(135deg, rgba(13, 127, 109, 0.10), rgba(255, 255, 255, 0)),
+    var(--paper-2);
+}
+
 .review-score-card {
   border-left-color: var(--green);
   background:
@@ -1467,6 +1474,96 @@ textarea {
   margin: 10px 0 0;
   color: #344054;
   line-height: 1.5;
+}
+
+.crm-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
+.status-badge {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--blue);
+  border: 1px solid #c7d7fe;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.crm-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.crm-stats span {
+  padding: 7px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #344054;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.crm-section {
+  display: grid;
+  gap: 10px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+}
+
+.crm-section h4,
+.crm-section p {
+  margin: 0;
+}
+
+.crm-section p {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.stage-timeline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stage-step {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.stage-step span,
+.stage-step small {
+  display: block;
+}
+
+.stage-step span {
+  margin-bottom: 4px;
+  font-weight: 900;
+}
+
+.stage-step small {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.stage-step.is-done {
+  border-color: rgba(13, 127, 109, 0.28);
+  background: rgba(13, 127, 109, 0.08);
+}
+
+.stage-step.is-current {
+  border-color: #c7d7fe;
+  background: #eef4ff;
 }
 
 .detail-actions,

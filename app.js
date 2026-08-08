@@ -1743,8 +1743,8 @@ function renderDashboard() {
   els.networkCount.textContent = state.networking.length;
   els.skillCoverage.textContent = `${calculateSkillFit().coverage}%`;
 
-  els.coachList.innerHTML = generateCoachCards().map(card => `
-    <div class="coach-card">
+  els.coachList.innerHTML = [...generateDashboardRecommendations(), ...generateCoachCards()].map((card, index) => `
+    <div class="coach-card ${index < 3 ? "recommended-card" : ""}">
       <h4>${escapeHtml(card.title)}</h4>
       <p>${escapeHtml(card.body)}</p>
     </div>
@@ -1831,7 +1831,7 @@ function renderExplore() {
         ${item.tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join("")}
       </div>
       <p>${escapeHtml(item.notes)}</p>
-      <button class="primary-button full-width" type="button" onclick="saveOpportunity(${index})">Save To Pipeline</button>
+      <button class="primary-button full-width" type="button" onclick="saveOpportunity(${index})">Save Opportunity</button>
     </div>
   `).join("");
   els.opportunityList.innerHTML = opportunityCards || emptyState("Save a target role or add skills to unlock recommendations.");
@@ -2088,31 +2088,46 @@ function saveRoleFromPath(pathId) {
   if (!alreadySaved) {
     state.savedRoles.push({ id: path.id, title: path.title, cluster: path.cluster, savedAt: new Date().toISOString() });
   }
+  const exists = state.opportunities.some(item => normalizeSkill(`${item.organization}${item.name}`) === normalizeSkill(`Role Watchlist${path.title}`));
+  if (!exists) {
+    const deadline = new Date();
+    deadline.setDate(deadline.getDate() + 14);
+    state.opportunities.push({
+      id: createId(),
+      type: "Role Path",
+      organization: "Role Watchlist",
+      name: path.title,
+      deadline: deadline.toISOString().slice(0, 10),
+      link: "",
+      notes: `${path.next} Recruiter proof expected: ${path.proof.slice(0, 3).join(", ")}.`
+    });
+  }
   state.profile.targetRole = state.profile.targetRole || path.title;
   addActivity(`Saved role path: ${path.title}`);
   saveState();
   render();
+  switchView("opportunities");
 }
 
 function saveOpportunity(index) {
   const item = currentRecommendations[index];
   if (!item) return;
-  const exists = state.applications.some(app => normalizeSkill(`${app.company}${app.role}`) === normalizeSkill(`${item.company}${item.role}`));
+  const exists = state.opportunities.some(opportunity => normalizeSkill(`${opportunity.organization}${opportunity.name}`) === normalizeSkill(`${item.company}${item.role}`));
   if (!exists) {
-    state.applications.push({
+    state.opportunities.push({
       id: createId(),
-      company: item.company,
-      role: item.role,
-      status: "Saved",
+      type: "Internship",
+      organization: item.company,
+      name: item.role,
       deadline: item.deadline,
       link: "",
-      notes: item.notes
+      notes: `${item.notes} Tags: ${item.tags.join(", ")}. Fit: ${item.fit}%.`
     });
-    addActivity(`Saved opportunity to pipeline: ${item.company} ${item.role}`);
+    addActivity(`Saved opportunity: ${item.company} ${item.role}`);
     saveState();
   }
   render();
-  switchView("applications");
+  switchView("opportunities");
 }
 
 function generatePriorityAlerts() {
@@ -2178,18 +2193,43 @@ function renderApplicationDetail() {
   }
   selectedApplicationId = selected.id;
   const match = scoreResumeAgainstText(`${selected.company} ${selected.role} ${selected.notes}`);
+  const days = selected.deadline ? daysUntil(selected.deadline) : null;
+  const statusAdvice = getApplicationStatusAdvice(selected);
+  const outreach = buildApplicationOutreach(selected, match);
+  const history = buildApplicationStageTimeline(selected);
   const plan = [
     ["Tailor resume", `Add keywords: ${match.missing.slice(0, 4).join(", ") || "your resume already covers the strongest terms"}.`],
     ["Prepare proof", strongestProjectLine()],
-    ["Follow up", selected.status === "Applied" || selected.status === "Follow-up needed" ? "Send a concise follow-up with portfolio link and one role-specific proof point." : "Set a follow-up date after applying."],
-    ["Interview prep", `Practice explaining how Nexus relates to ${selected.role}.`]
+    ["Follow up", statusAdvice],
+    ["Interview prep", `Prepare a 90-second story connecting Nexus, CareerLens, or LearnWise to ${selected.role}.`]
   ];
   els.applicationDetailLabel.textContent = `${selected.company} - ${selected.role}`;
   els.applicationDetail.innerHTML = `
-    <div class="match-card">
-      <strong>${match.score}% resume-role match</strong>
+    <div class="match-card application-crm-card">
+      <div class="crm-card-head">
+        <div>
+          <strong>${match.score}% resume-role match</strong>
+          <p>${escapeHtml(match.summary)}</p>
+        </div>
+        <span class="status-badge">${escapeHtml(selected.status)}</span>
+      </div>
       <div class="progress-track"><div class="progress-fill" style="width:${match.score}%"></div></div>
-      <p>${escapeHtml(match.summary)}</p>
+      <div class="crm-stats">
+        <span>${selected.deadline ? `${days < 0 ? "Closed" : `${days} days left`}` : "No deadline"}</span>
+        <span>${match.matched.length} matched keywords</span>
+        <span>${match.missing.length} gaps</span>
+      </div>
+    </div>
+    <div class="crm-section">
+      <h4>Application Timeline</h4>
+      <div class="stage-timeline">
+        ${history.map(stage => `
+          <div class="stage-step ${stage.done ? "is-done" : ""} ${stage.current ? "is-current" : ""}">
+            <span>${escapeHtml(stage.label)}</span>
+            <small>${escapeHtml(stage.note)}</small>
+          </div>
+        `).join("")}
+      </div>
     </div>
     <div class="detail-actions">
       ${plan.map(([title, body]) => `
@@ -2199,7 +2239,44 @@ function renderApplicationDetail() {
         </div>
       `).join("")}
     </div>
+    <div class="crm-section">
+      <h4>Outreach Draft</h4>
+      <p>${escapeHtml(outreach)}</p>
+    </div>
   `;
+}
+
+function getApplicationStatusAdvice(application) {
+  const status = application.status;
+  if (status === "Saved") return "Promote this from saved to applied only after adding a link, deadline, and role-specific resume bullet.";
+  if (status === "Applied") return "Send a concise follow-up after 5-7 business days with your portfolio link and one proof point.";
+  if (status === "Interviewing") return "Build a practice set: one project walkthrough, one behavioral story, and three role-specific technical questions.";
+  if (status === "Follow-up needed") return "Send the follow-up today and record the date in notes so the pipeline stays clean.";
+  if (status === "Offer") return "Compare compensation, learning value, commute/remote setup, and long-term fit before accepting.";
+  if (status === "Rejected") return "Archive the role, capture one lesson, and reuse the tailored bullet for similar postings.";
+  return "Choose a next action and deadline so this application does not sit idle.";
+}
+
+function buildApplicationOutreach(application, match) {
+  const proof = state.projects.find(project => project.link && project.impact) || state.projects[0];
+  const proofLine = proof
+    ? `I have been building ${proof.name}, which shows ${proof.impact || proof.stack || "my project-based technical experience"}.`
+    : "I have been building student-focused AI and data projects that connect directly to this role.";
+  const keywordLine = match.matched.length
+    ? `The strongest overlap I see is ${match.matched.slice(0, 3).join(", ")}.`
+    : "I am continuing to tailor my project proof to the role requirements.";
+  return `Hi, I wanted to follow up on my application for ${application.role} at ${application.company}. ${proofLine} ${keywordLine} I would be glad to share my portfolio or more context on how my experience fits the role.`;
+}
+
+function buildApplicationStageTimeline(application) {
+  const stages = ["Saved", "Applied", "Interviewing", "Offer"];
+  const currentIndex = Math.max(0, stages.indexOf(application.status));
+  return stages.map((stage, index) => ({
+    label: stage,
+    done: index < currentIndex || application.status === stage,
+    current: application.status === stage,
+    note: index < currentIndex ? "Complete" : application.status === stage ? "Current stage" : "Next"
+  }));
 }
 
 function selectApplicationDetail(id) {
@@ -2370,6 +2447,8 @@ function analyzeJobDescription() {
   const keywords = extractKeywords(analysisText);
   const score = scoreResumeAgainstText(analysisText);
   const interviewTopics = [...new Set([...score.missing.slice(0, 4), ...keywords.slice(0, 3)])].slice(0, 6);
+  const resumeEdits = buildResumeEditsForJob(roleGuess, company, score, keywords);
+  const priority = getJobAnalysisPriority(score.score, deadline);
   latestJobAnalysis = {
     id: createId(),
     createdAt: new Date().toISOString(),
@@ -2383,15 +2462,23 @@ function analyzeJobDescription() {
     score: score.score,
     missing: score.missing,
     matched: score.matched,
-    interviewTopics
+    interviewTopics,
+    resumeEdits,
+    priority
   };
   state.jobAnalyses = [latestJobAnalysis, ...state.jobAnalyses].slice(0, 10);
   els.jdScoreLabel.textContent = `${score.score}% resume match`;
   els.jobAnalysisOutput.innerHTML = `
-    <div class="match-card">
-      <strong>${escapeHtml(company)} - ${escapeHtml(roleGuess)}</strong>
+    <div class="match-card job-report-card">
+      <div class="crm-card-head">
+        <div>
+          <strong>${escapeHtml(company)} - ${escapeHtml(roleGuess)}</strong>
+          <p>${score.score}% resume-to-role match. ${escapeHtml(score.summary)}</p>
+        </div>
+        <span class="status-badge">${escapeHtml(priority.label)}</span>
+      </div>
       <div class="progress-track"><div class="progress-fill" style="width:${score.score}%"></div></div>
-      <p>${score.score}% resume-to-role match. ${escapeHtml(score.summary)}</p>
+      <p>${escapeHtml(priority.reason)}</p>
       <p>${escapeHtml(source)}${url ? ` - <a href="${escapeAttribute(url)}" target="_blank" rel="noreferrer">Open posting</a>` : ""}</p>
     </div>
     <div class="analysis-grid">
@@ -2411,10 +2498,45 @@ function analyzeJobDescription() {
         <h4>Suggested resume move</h4>
         <p>${escapeHtml(score.missing[0] ? getSkillGapAction(score.missing[0]) : "Add a stronger metric to your best project bullet.")}</p>
       </div>
+      <div class="coach-card">
+        <h4>Exact bullet edits</h4>
+        <p>${escapeHtml(resumeEdits.join(" "))}</p>
+      </div>
+      <div class="coach-card">
+        <h4>Apply decision</h4>
+        <p>${escapeHtml(priority.next)}</p>
+      </div>
     </div>
   `;
   addActivity(`Analyzed imported role for ${roleGuess}`);
   saveState();
+}
+
+function buildResumeEditsForJob(role, company, score, keywords) {
+  const strongestProject = state.projects.find(project => project.link && project.impact) || state.projects[0];
+  const projectName = strongestProject?.name || "Nexus AI";
+  const stack = strongestProject?.stack || "JavaScript, FastAPI, SQLite";
+  const firstMissing = score.missing[0] || keywords[0] || "role-specific requirements";
+  const secondMissing = score.missing[1] || keywords[1] || "measurable outcomes";
+  return [
+    `Rewrite one project bullet as: Built ${projectName} using ${stack} to support ${role} workflows for students and connect profile, application, skill, and resume data into next-step guidance.`,
+    `Add a keyword proof line for ${firstMissing}: show the project, course, certification, or work example that proves it.`,
+    `Add one measurable result tied to ${secondMissing}, such as roles analyzed, workflows tracked, pages deployed, users supported, or quality checks completed.`
+  ];
+}
+
+function getJobAnalysisPriority(score, deadline) {
+  const days = deadline ? daysUntil(deadline) : null;
+  if (days !== null && days < 0) {
+    return { label: "Closed", reason: "This deadline has passed. Save it only as research for similar roles.", next: "Do not spend application time here unless the posting is still accepting candidates." };
+  }
+  if (score >= 80) {
+    return { label: "Strong fit", reason: "This role is worth applying to after a quick tailored resume pass.", next: "Apply, then set a 5-7 business day follow-up reminder." };
+  }
+  if (score >= 60) {
+    return { label: "Targetable", reason: "You have enough overlap to apply, but the resume should address the top missing skills first.", next: "Tailor two bullets before applying and prepare one project story around the missing skill." };
+  }
+  return { label: "Stretch", reason: "This role has meaningful gaps. It may still be useful if it matches your direction.", next: "Save it as a learning target, close one skill gap, then look for a closer-fit posting." };
 }
 
 function inferCompanyFromUrl(url) {
@@ -2955,6 +3077,45 @@ function getReadinessSummary(score) {
   if (score >= 62) return `You are close. Add measurable project outcomes and keep moving applications toward interviews.`;
   if (score >= 36) return `Your foundation is forming. Turn each project, certification, and application into a tracked next action.`;
   return "Add your profile, first applications, projects, goals, and certification plan to activate your workspace.";
+}
+
+function generateDashboardRecommendations() {
+  const fit = calculateSkillFit();
+  const activeApps = state.applications.filter(app => !["Rejected", "Offer"].includes(app.status));
+  const dueSoon = getAllDeadlines()
+    .filter(item => {
+      const days = daysUntil(item.date);
+      return days >= 0 && days <= 10;
+    })
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  const bestOpportunity = state.opportunities
+    .filter(item => !item.deadline || daysUntil(item.deadline) >= 0)
+    .sort((a, b) => daysUntil(a.deadline) - daysUntil(b.deadline))[0];
+  const bestApplication = activeApps
+    .map(app => ({ ...app, match: scoreResumeAgainstText(`${app.company} ${app.role} ${app.notes}`).score }))
+    .sort((a, b) => b.match - a.match)[0];
+  const cards = [];
+  cards.push({
+    title: "Recommended for you",
+    body: bestOpportunity
+      ? `Promote or decide on ${bestOpportunity.name} at ${bestOpportunity.organization}. It is saved as an opportunity and needs an apply/archive decision.`
+      : "Save one opportunity from Explore Roles or Job Board so Nexus can start ranking what deserves application time."
+  });
+  cards.push({
+    title: "Best application move",
+    body: bestApplication
+      ? `${bestApplication.company} - ${bestApplication.role} is your strongest tracked match at ${bestApplication.match}%. Next: ${getApplicationStatusAdvice(bestApplication)}`
+      : "Add your first application with a status, deadline, link, and notes so Nexus can generate a role-specific plan."
+  });
+  cards.push({
+    title: dueSoon ? "Deadline focus" : "Skill gap focus",
+    body: dueSoon
+      ? `${dueSoon.title} is due ${formatDate(dueSoon.date)}. Finish the next action before adding new roles.`
+      : fit.gaps[0]
+      ? `${fit.gaps[0].name} is the clearest gap for ${state.profile.targetRole || "your target role"}. ${fit.gaps[0].action}`
+      : "Your role-fit gaps are covered. Improve the proof quality: links, screenshots, metrics, and case studies."
+  });
+  return cards;
 }
 
 function generateCoachCards() {
